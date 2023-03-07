@@ -23,12 +23,14 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base_setup', 'base', 'product', 'account', 'stock', 'payment', 'sale', 'purchase'],
+    'depends': ['product','stock', 'sale', 'purchase'],
 
     # always loaded
     'data': [
         # 'data/settings.xml',
-        # 'security/ir.model.access.csv',
+        'security/ir.model.access.csv',
+        'views/ws_product_inherit.xml',
+        'views/ws_license_keys_view.xml'
     ],
     # only loaded in demonstration mode
     'demo': [

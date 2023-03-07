@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="product_product_inherit_form" model="ir.ui.view">
+        <field name="name">product.template.inherit</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_normal_form_view"/>
+        <field name="arch" type="xml">
+            <div name="options" position="inside">
+                <div invisible="1">
+                    <field name="is_virtual"/>
+                    <label for="is_virtual"/>
+                </div>
+            </div>
+            <!--            <notebook position="inside">-->
+            <!--                <page string="License Keys" name="extra1" attrs="{'invisible':[('is_virtual', '=', False)]}">-->
+            <!--                    <field name="keys_ids" readonly="1"/>-->
+            <!--                </page>-->
+            <!--            </notebook>-->
+        </field>
+    </record>
+
+    <record id="product_template_inherit_form" model="ir.ui.view">
+        <field name="name">product.template.inherit</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <div name="button_box" position="after">
+                <field name="state" invisible="1"/>
+                <widget name="web_ribbon" title="EN STOCK" bg_color="bg-success"
+                        attrs="{'invisible': [('state', '!=', 'EN_STOCK')]}"/>
+                <widget name="web_ribbon" title="SUR COMMANDE" bg_color="bg-info"
+                        attrs="{'invisible': [('state', '!=', 'SUR COMMANDE')]}"/>
+                <widget name="web_ribbon" title="RUPTURE DE STOCK" bg_color="bg-danger"
+                        attrs="{'invisible': [('state', '!=', 'RUPTURE_DE_STOCK')]}"/>
+                <widget name="web_ribbon" title="OBSOLETE" bg_color="bg-danger"
+                        attrs="{'invisible': [('state', '!=', 'OBSOLETE')]}"/>
+            </div>
+            <div name="options" position="inside">
+                <div attrs="{'invisible':[('type', '!=', 'product')]}">
+                    <field name="is_virtual"/>
+                    <label for="is_virtual"/>
+                </div>
+                <group>
+                    <group>
+                        <field name="create_by"/>
+                        <field name="availabilityDate"/>
+                        <field name="target"/>
+                        <field name="isUsed"/>
+                        <field name="installLink" attrs="{'invisible': [('is_virtual', '=', False)]}"/>
+                    </group>
+                </group>
+            </div>
+
+            <group name="group_standard_price" position="inside">
+                <field name="brand"/>
+                <field name="manufacturer_ref"/>
+            </group>
+            <notebook position="inside">
+                <!--                    <page string="Characteristic" name="extra">-->
+                <!--                        <field name="characteristic_ids"/>-->
+                <!--                    </page>-->
+                <!--                <page string="License Keys" name="extra1" attrs="{'invisible':[('is_virtual', '=', False)]}">-->
+                <!--                    <field name="key_ids"/>-->
+                <!--                </page>-->
+                <page string="Images" name="extra">
+                    <group name="url">
+                        <field name="image_url"/>
+                    </group>
+                    <field name="image_1920" widget="image" style="height: 200; width: 200; "></field>
+                </page>
+            </notebook>
+
+
+        </field>
+    </record>
+
+    <record id="view_product_template_filter_inherit" model="ir.ui.view">
+        <field name="name">product.template.search.inherit</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_search_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <filter string="Virtual product" name="virtual" domain="[('is_virtual', '=', True)]"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!--        BRAND VIEWS-->
+
+    <record id="product_brand_form" model="ir.ui.view">
+        <field name="name">product.brand.form</field>
+        <field name="model">product.brand</field>
+        <field name="type">form</field>
+        <field name="arch" type="xml">
+            <form class="oe_form_configuration">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" string="Brand name" class="oe_edit_only"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. H.P"/>
+                        </h1>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="product_brand_tree" model="ir.ui.view">
+        <field name="name">product.brand.tree</field>
+        <field name="model">product.brand</field>
+        <field name="arch" type="xml">
+            <tree string="Brands">
+                <field name="name"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="product_brand_act_window" model="ir.actions.act_window">
+        <field name="name">product brand</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">product.brand</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="oe_view_nocontent_create">
+                click here to add new Brand.
+            </p>
+        </field>
+    </record>
+
+    <menuitem name="Product Brands" id="purchase_product_brand_menu"
+              parent="account.menu_finance_configuration"
+              action="product_brand_act_window" sequence="30"/>
+
+</odoo>

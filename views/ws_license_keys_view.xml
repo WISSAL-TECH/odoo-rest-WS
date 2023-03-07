@@ -1,0 +1,68 @@
+<odoo>
+    <data>
+        <record id="product_virtual_keys_act_window" model="ir.actions.act_window">
+            <field name="name">product Keys</field>
+            <field name="res_model">product.virtual.keys</field>
+            <field name="view_mode">tree,form</field>
+            <field name="help" type="html">
+                <p class="oe_view_nocontent_create">
+                    click here to add new Key.
+                </p>
+            </field>
+        </record>
+
+        <record id="product_virtual_keys_tree" model="ir.ui.view">
+            <field name="name">product.virtual.keys.tree</field>
+            <field name="model">product.virtual.keys</field>
+            <field name="type">tree</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="key"/>
+                    <field name="reference_key"/>
+                    <field name="is_used"/>
+                    <field name="is_viewed"/>
+                    <field name="is_reserved"/>
+                    <field name="product"/>
+                    <field name="manufacturer_ref"/>
+                    <field name="order_number"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="product_virtual_keys_form" model="ir.ui.view">
+            <field name="name">product.virtual.keys.form</field>
+            <field name="model">product.virtual.keys</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <group>
+                            <group>
+                                <field name="key"/>
+                                <field name="reference_key"/>
+                                <field name="product"/>
+                                <field name="manufacturer_ref"/>
+                                <field name="order_number"/>
+                            </group>
+                        </group>
+                        <group>
+                            <group>
+                                <field name="is_used"/>
+                                <field name="is_viewed"/>
+                                <field name="is_reserved"/>
+                            </group>
+                        </group>
+
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+
+        <menuitem name="Virtual Keys"
+                  id="virtual_key_menu"
+                  parent="stock.menu_stock_inventory_control"
+                  action="product_virtual_keys_act_window"
+        />
+    </data>
+</odoo>
