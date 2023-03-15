@@ -27,7 +27,7 @@
 
     # always loaded
     'data': [
-        # 'data/settings.xml',
+        'data/settings.xml',
         'security/ir.model.access.csv',
         'views/ws_product_inherit.xml',
         'views/ws_license_keys_view.xml'
