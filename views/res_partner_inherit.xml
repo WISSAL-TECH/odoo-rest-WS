@@ -13,12 +13,13 @@
                 </field>
 
                 <field name="name" position="after">
-                    <h1 attrs="{'invisible':['|','|',('is_company', '==', True),('is_supplier','=','True'),('type' , '!=', 'contact')]}">
+                    <h1 attrs="{'invisible':['|',('is_company', '==', True),('type' , '!=', 'contact')]}">
                         <field name="lastname" placeholder="Last name"
-                               attrs="{'required': ['&amp;','&amp;',('is_company','=',False),('is_supplier','=','False'),('type','=','contact')]}"/>
+                               attrs="{'required': ['&amp;',('is_company','=',False),('type','=','contact')]}"/>
                     </h1>
 
                     <group style="font-size: 1rem">
+                        <field name="create_by" readonly="1"/>
                         <field name="status"/>
                     </group>
                 </field>

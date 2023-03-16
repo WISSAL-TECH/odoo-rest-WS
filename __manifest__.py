@@ -29,6 +29,7 @@
     'data': [
         # 'data/settings.xml',
         # 'security/ir.model.access.csv',
+        'views/res_partner_inherit.xml'
     ],
     # only loaded in demonstration mode
     'demo': [
