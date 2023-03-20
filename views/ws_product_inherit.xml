@@ -1,11 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+
     <record id="product_product_inherit_form" model="ir.ui.view">
-        <field name="name">product.template.inherit</field>
+        <field name="name">product.product.inherit</field>
         <field name="model">product.product</field>
         <field name="inherit_id" ref="product.product_normal_form_view"/>
         <field name="arch" type="xml">
+
+            <field name="product_template_variant_value_ids" position="after">
+
+                <group>
+                    <label for="variant_name"/>
+                    <h2>
+                        <field name="variant_name"/>
+                    </h2>
+                    <label for="variant_ref"/>
+                    <h2>
+                        <field name="variant_ref"/>
+                    </h2>
+                </group>
+
+            </field>
+
+
             <div name="options" position="inside">
                 <div invisible="1">
                     <field name="is_virtual"/>
@@ -17,6 +35,29 @@
             <!--                    <field name="keys_ids" readonly="1"/>-->
             <!--                </page>-->
             <!--            </notebook>-->
+        </field>
+    </record>
+<record id="product_product_inherit_form" model="ir.ui.view">
+        <field name="name">product.product.inherit</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_variant_easy_edit_view"/>
+        <field name="arch" type="xml">
+
+            <field name="name" position="after">
+
+                <group>
+                    <label for="variant_name"/>
+                    <h2>
+                        <field name="variant_name"/>
+                    </h2>
+                    <label for="variant_ref"/>
+                    <h2>
+                        <field name="variant_ref"/>
+                    </h2>
+                </group>
+
+            </field>
+
         </field>
     </record>
 
@@ -74,6 +115,7 @@
 
         </field>
     </record>
+
 
     <record id="view_product_template_filter_inherit" model="ir.ui.view">
         <field name="name">product.template.search.inherit</field>
