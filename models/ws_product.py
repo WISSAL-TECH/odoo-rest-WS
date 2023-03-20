@@ -100,6 +100,14 @@ class Product(models.Model):
                 ws_type = "VIRTUAL"
             else:
                 ws_type = "PHISICAL"
+            rec = super(Product, self).create(vals)
+
+            for var in rec.product_variant_ids:
+                values_concat = ""
+                for value in var.product_template_attribute_value_ids:
+                    values_concat = values_concat + value.name + ", "
+                var.variant_name = vals["name"] + " (" + values_concat + ")"
+                print(var.variant_name)
 
             # FILL THE JSON DATA
             product_json = {
@@ -120,7 +128,7 @@ class Product(models.Model):
             }
             print('this is odoo creation', product_json)
 
-            return super(Product, self).create(vals)
+            return rec
 
     # UPDATE A PRODUCT
     def write(self, vals):
@@ -156,7 +164,16 @@ class Product(models.Model):
             print("API UPDATE", vals)
             return rec
         else:
+            for var in self.product_variant_ids:
+                values_concat = ""
+                for value in var.product_template_attribute_value_ids:
+                    values_concat = values_concat + value.name + "/ "
+                var.variant_name = self.name + " (" + values_concat + ")"
+                print(var.variant_name)
+
+
             return super(Product, self).write(vals)
+
 
     def create_brand(self, brand):
         # CHECK IF THE BRAND EXISTS
@@ -195,6 +212,15 @@ class Product(models.Model):
         except:
             value_id = self.env['product.attribute.value'].create({'name': value, "attribute_id": attr_id})
         return value_id
+
+
+class Variant(models.Model):
+    _inherit = 'product.product'
+
+    variant_name = fields.Char("Variant Name")
+    variant_ref = fields.Char("Reference")
+
+
 
 
 class ProductBrand(models.Model):
