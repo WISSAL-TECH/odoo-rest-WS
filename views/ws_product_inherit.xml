@@ -8,58 +8,15 @@
         <field name="inherit_id" ref="product.product_normal_form_view"/>
         <field name="arch" type="xml">
 
-            <field name="product_template_variant_value_ids" position="after">
-
-                <group>
-                    <label for="variant_name"/>
-                    <h2>
-                        <field name="variant_name"/>
-                    </h2>
-                    <label for="variant_ref"/>
-                    <h2>
-                        <field name="variant_ref"/>
-                    </h2>
-                </group>
-
-            </field>
-
-
             <div name="options" position="inside">
                 <div invisible="1">
                     <field name="is_virtual"/>
                     <label for="is_virtual"/>
                 </div>
             </div>
-            <!--            <notebook position="inside">-->
-            <!--                <page string="License Keys" name="extra1" attrs="{'invisible':[('is_virtual', '=', False)]}">-->
-            <!--                    <field name="keys_ids" readonly="1"/>-->
-            <!--                </page>-->
-            <!--            </notebook>-->
         </field>
     </record>
-<record id="product_product_inherit_form" model="ir.ui.view">
-        <field name="name">product.product.inherit</field>
-        <field name="model">product.product</field>
-        <field name="inherit_id" ref="product.product_variant_easy_edit_view"/>
-        <field name="arch" type="xml">
 
-            <field name="name" position="after">
-
-                <group>
-                    <label for="variant_name"/>
-                    <h2>
-                        <field name="variant_name"/>
-                    </h2>
-                    <label for="variant_ref"/>
-                    <h2>
-                        <field name="variant_ref"/>
-                    </h2>
-                </group>
-
-            </field>
-
-        </field>
-    </record>
 
     <record id="product_template_inherit_form" model="ir.ui.view">
         <field name="name">product.template.inherit</field>
@@ -89,6 +46,7 @@
                         <field name="target"/>
                         <field name="isUsed"/>
                         <field name="installLink" attrs="{'invisible': [('is_virtual', '=', False)]}"/>
+                        <field name="master_product"/>
                     </group>
                 </group>
             </div>
@@ -110,6 +68,9 @@
                     </group>
                     <field name="image_1920" widget="image" style="height: 200; width: 200; "></field>
                 </page>
+                <page string="Characteristics">
+                        <field name="characteristic_ids"/>
+                </page>
             </notebook>
 
 
@@ -123,9 +84,13 @@
         <field name="inherit_id" ref="product.product_template_search_view"/>
         <field name="arch" type="xml">
             <xpath expr="//search" position="inside">
-                <filter string="Virtual product" name="virtual" domain="[('is_virtual', '=', True)]"/>
+                <filter name="group_master_product" string="Parent product" icon="terp-partner" context="{'group_by':'master_product'}"/>
             </xpath>
         </field>
+    </record>
+
+    <record id="stock.product_template_action_product" model="ir.actions.act_window">
+        <field name="context">{'search_default_group_master_product': 1}</field>
     </record>
 
     <!--        BRAND VIEWS-->
@@ -143,6 +108,7 @@
                             <field name="name" placeholder="e.g. H.P"/>
                         </h1>
                     </div>
+                    <field name="product_ids"/>
                 </sheet>
             </form>
         </field>
@@ -154,6 +120,7 @@
         <field name="arch" type="xml">
             <tree string="Brands">
                 <field name="name"/>
+                <field name="product_ids"/>
             </tree>
         </field>
     </record>
@@ -170,8 +137,54 @@
         </field>
     </record>
 
+    <record id="product_master_act_window" model="ir.actions.act_window">
+        <field name="name">product master</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">product.master</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="oe_view_nocontent_create">
+                click here to add new Brand.
+            </p>
+        </field>
+    </record>
+
+    <record id="product_master_tree" model="ir.ui.view">
+        <field name="name">product.master.tree</field>
+        <field name="model">product.master</field>
+        <field name="arch" type="xml">
+            <tree string="Products">
+                <field name="name"/>
+                <field name="ref"/>
+            </tree>
+        </field>
+    </record>
+    <record id="product_master_form" model="ir.ui.view">
+        <field name="name">product.master.form</field>
+        <field name="model">product.master</field>
+        <field name="arch" type="xml">
+            <form string="Products">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="ref"/>
+                    </group>
+                    <group>
+                        <field name="product_list"/>
+                    </group>
+
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+
     <menuitem name="Product Brands" id="purchase_product_brand_menu"
               parent="account.menu_finance_configuration"
               action="product_brand_act_window" sequence="30"/>
+
+        <menuitem name="Master products" id="master_product_menu"
+                  parent="stock.menu_stock_root"
+                  action="product_master_act_window" sequence="30"/>
 
 </odoo>

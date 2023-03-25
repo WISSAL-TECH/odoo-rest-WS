@@ -30,6 +30,8 @@ class Product(models.Model):
         selection=[("NEUF_SOUS_EMBALLAGE", "NEUF SOUS EMBALLAGE"), ("OCCASION_10", "OCCASION 10/10"),
                    ("OCCASION_9", "OCCASION9/10")], string="Etat", default="NEUF_SOUS_EMBALLAGE")
     installLink = fields.Char("Install link")
+    characteristic_ids = fields.One2many('product.characteristics', 'product_id', "Characteristics", copy=True)
+    master_product = fields.Many2one("product.master", string="Parent product", store=True)
 
     # set the url and headers
     # headers = {"Content-Type": "application/json", "Accept": "application/json", "Catch-Control": "no-cache"}
@@ -39,7 +41,7 @@ class Product(models.Model):
     def create(self, vals):
         if "create_by" in vals:
             # 1- CREATE A PRODUCT FROM WS (Receive a product from WS)
-            if 'create_by' in vals.keys():
+            if 'create_by' in vals:
                 # GET BRAND, COMPANY, ATTRIBUTES AND CATEGORY ID FROM THE NAMES GIVEN IN VALS
                 vals['brand'] = self.create_brand(vals['brand']).id
                 vals['categ_id'] = self.create_category(vals['categ_id']).id
@@ -49,77 +51,54 @@ class Product(models.Model):
                 for attr in vals['attribute']:
                     attribute_items = [0, 0]
                     attr_id = self.create_attribute(attr['attribute_id']).id
-                    values_list = []
-                    for value in attr['value_ids']:
-                        attr_value_id = self.create_attribute_value(value, attr_id).id
-                        values_list.append(attr_value_id)
-                    print(values_list)
+                    attr_value_id = self.create_attribute_value(attr['value_id'], attr_id).id
                     attribute_items.append({
                         'attribute_id': attr_id,
-                        'value_ids': values_list
+                        'value_id': attr_value_id
                     })
+                    print(attribute_items)
                     attributes.append(attribute_items)
-                vals['attribute_line_ids'] = attributes
-                vals.pop('attribute')
+                vals['characteristic_ids'] = attributes
 
-            return super(Product, self).create(vals)
+            master_product = request.env['product.master'].search([('ref', '=', vals['manufacturer_ref'])])
+            if master_product:
+                vals['master_product'] = master_product.id
+            else:
+                new_master_product = request.env['product.master'].create(
+                    {'ref': vals['manufacturer_ref'], 'name': vals['name']})
+                vals['master_product'] = new_master_product.id
+
+            [vals.pop(e) for e in ['attribute', 'product_name']]
+
+            rec = super(Product, self).create(vals)
+            return rec
 
         # 2- CREATE A PRODUCT FROM ODOO (Send a product to WS)
         else:
             category = self.env['product.category'].search([("id", '=', vals['categ_id'])]).name
             brand = self.env['product.brand'].search([("id", '=', vals['brand'])]).name
-
-            # GET SUPPLIERS LIST AND PUT IT IN THE REQUESTED STRUCTURE
-            # supplier_list = []
-            # for key in vals['seller_ids']:
-            #     supplier_obj = {
-            #         "fournisseur": key[2]['name'],
-            #         "qte": key[2]["min_qty"],
-            #         "prix": key[2]["price"]
-            #     }
-            #     supplier_list.append(supplier_obj)
-
-            # GET characteristic LIST AND PUT IT IN THE REQUESTED STRUCTURE
-            # characteristic_list = []
-            # for attr in vals['attribute_line_ids']:
-            #     attribute_name = self.env['product.attribute'].search([("id", "=", attr[2]['attribute_id'])]).name
-            #     # value_name = self.env['product.attribute.value'].search(
-            #     #     [("id", "=", attr[2]['value_ids'][0][2][0])]).name
-            #
-            #     attribute_obj = {"title": attribute_name, }
-            #     value_list = []  # GET ALL THE VALUES FOR THIS ATTRIBUTE
-            #     for value in attr[2]['value_ids'][0][2]:
-            #         value_name = self.env['product.attribute.value'].search(
-            #             [("id", "=", value)]).name
-            #         value_list.append(value_name)
-            #         attribute_obj["value"] = value_list
-            #     characteristic_list.append(attribute_obj)
-            # print(characteristic_list)
+            product_name = request.env['product.master'].search([('id', '=', vals['master_product'])]).name
+            manufacturer_ref = request.env['product.master'].search([('id', '=', vals['master_product'])]).ref
 
             if vals['is_virtual']:
                 ws_type = "VIRTUAL"
             else:
                 ws_type = "PHISICAL"
-            rec = super(Product, self).create(vals)
 
-            for var in rec.product_variant_ids:
-                values_concat = ""
-                for value in var.product_template_attribute_value_ids:
-                    values_concat = values_concat + value.name + ", "
-                var.variant_name = vals["name"] + " (" + values_concat + ")"
-                print(var.variant_name)
+            rec = super(Product, self).create(vals)
 
             # FILL THE JSON DATA
             product_json = {
-                "name": vals["name"],
+                "config_name": vals["name"],
+                "name": product_name,
                 "productBrand": brand,
                 "categoryLabel": category,
-                "reference": vals["default_code"],
+                "reference": vals["manufacturer_ref"],
                 "description": vals["description"],
                 "images": vals["image_url"],
                 "type": ws_type,
                 "price": vals["list_price"],
-                "refConstructor": vals["manufacturer_ref"],
+                "refConstructor": manufacturer_ref,
                 "installLink": vals["installLink"],
                 "target": vals["target"],
                 "isUsed": vals["isUsed"],
@@ -137,43 +116,81 @@ class Product(models.Model):
             print("bb")
             return super(Product, self).write(vals)
 
-        # 1- RECEIVE UN UPDATE FROM TEKKEYS
-        if 'create_by' in vals.keys():
+        # 1- RECEIVE UN UPDATE FROM WS
+        if 'create_by' in vals:
+
+            if 'brand' in vals:
+                vals['brand'] = self.create_brand(vals['brand']).id
+            if 'categ_id' in vals:
+                vals['categ_id'] = self.create_category(vals['categ_id']).id
+            print(vals['attribute'])
+
             # UPDATE CHARACTERISTICS LIST
             attributes = [(5, 0, 0)]
             for attr in vals['attribute'][0][2]:
+                print(attr)
                 attribute_items = [0, 0]
                 attr_id = self.create_attribute(attr['attribute_id']).id
-                values_list = []
-                for value in attr['value_ids']:
-                    attr_value_id = self.create_attribute_value(value, attr_id).id
-                    values_list.append(attr_value_id)
+                attr_value_id = self.create_attribute_value(attr['value_id'], attr_id).id
 
                 attribute_items.append({
                     'attribute_id': attr_id,
-                    'value_ids': values_list
+                    'value_id': attr_value_id
                 })
-
                 attributes.append(attribute_items)
-            vals['attribute_line_ids'] = attributes
+            vals['characteristic_ids'] = attributes
             vals.pop('attribute')
-            print(vals)
 
             rec = super(Product, self).write(vals)
-            print(rec)
             print("API UPDATE", vals)
             return rec
+
+        # 1- SEND UN UPDATE/ARCHIVE TO WS FROM ODOO
         else:
-            for var in self.product_variant_ids:
-                values_concat = ""
-                for value in var.product_template_attribute_value_ids:
-                    values_concat = values_concat + value.name + "/ "
-                var.variant_name = self.name + " (" + values_concat + ")"
-                print(var.variant_name)
+            # 1- ARCHIVE A PRODUCT FROM ODOO
+            if 'active' in vals.keys():
+                if vals["active"] == False:
+                    archived_product = {"manufacturer_ref": self.manufacturer_ref}
+                    print("this is odoo archive", archived_product)
 
+                else:
+                    unarchived_product = {"manufacturer_ref": self.manufacturer_ref}
+                    print("this is odoo unarchive", unarchived_product)
+                return super(Product, self).write(vals)
+            else:
+                # 2- UPDATE FROM ODOO
+                rec = super(Product, self).write(vals)
+                product_ref = self.master_product.ref
+                print("product ref", product_ref)
 
-            return super(Product, self).write(vals)
+                # GET characteristics LIST
+                characteristic_list = []
+                for attr in self.characteristic_ids:
+                    characteristic_obj = {
+                        "attribute_id": attr.attribute_id.name,
+                        "value_id": attr.value_id.name}
+                    characteristic_list.append(characteristic_obj)
 
+                if vals['is_virtual']:
+                    ws_type = "VIRTUAL"
+                else:
+                    ws_type = "PHISICAL"
+
+                # FILL THE JSON DATA
+                product_json = {
+                    "name": self.name,
+                    "product": product_ref,
+                    "brand": self.brand.name,
+                    "categ_id": self.categ_id.name,
+                    "description": self.description,
+                    "image_url": self.image_url,
+                    "type": ws_type,
+                    "list_price": self.list_price,
+                    "attribute": characteristic_list,
+                }
+
+                print("THIS IS AN ODOO UPDATE ", product_json)
+                return rec
 
     def create_brand(self, brand):
         # CHECK IF THE BRAND EXISTS
@@ -196,31 +213,29 @@ class Product(models.Model):
     def create_attribute(self, attribute):
         # CHECK IF THE attribute EXISTS
         try:
-            attribute_id = self.env['product.attribute'].search([("name", "=", attribute)])[0]
-
+            attribute_id = self.env['characteristic.name'].search([("name", "=", attribute)])[0]
         # CREATE A NEW ONE IF NOT EXISTING
         except:
-            attribute_id = self.env['product.attribute'].create({'name': attribute})
+            attribute_id = self.env['characteristic.name'].create({'name': attribute})
 
         return attribute_id
 
     def create_attribute_value(self, value, attr_id):
         # CHECK IF THE attribute value EXISTS
         try:
-            value_id = self.env['product.attribute.value'].search([("name", "=", value)])[0]
+            value_id = self.env['characteristic.value'].search([("name", "=", value)])[0]
         # CREATE A NEW ONE IF NOT EXISTING
         except:
-            value_id = self.env['product.attribute.value'].create({'name': value, "attribute_id": attr_id})
+            value_id = self.env['characteristic.value'].create({'name': value, "attribute_id": attr_id})
         return value_id
 
 
-class Variant(models.Model):
-    _inherit = 'product.product'
+class MasterProduct(models.Model):
+    _name = 'product.master'
 
-    variant_name = fields.Char("Variant Name")
-    variant_ref = fields.Char("Reference")
-
-
+    name = fields.Char("Name")
+    product_list = fields.One2many('product.template', 'master_product', 'Products list', domain="[('master_product', '=', id)]")
+    ref = fields.Char(string="Manufacturer reference")
 
 
 class ProductBrand(models.Model):
@@ -228,7 +243,7 @@ class ProductBrand(models.Model):
     _description = 'product brand'
     name = fields.Char(string='Brand', required=True)
     product_ids = fields.One2many(
-        "product.template", "id", string="product ids")
+        "product.template", "id", string="product ids", copy=True)
 
     def name_get(self):
         res = []

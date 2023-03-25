@@ -31,7 +31,8 @@
         'security/ir.model.access.csv',
         'views/ws_product_inherit.xml',
         'views/ws_license_keys_view.xml',
-        'views/res_partner_inherit.xml'
+        'views/res_partner_inherit.xml',
+        'views/characteristics.xml'
     ],
     # only loaded in demonstration mode
     'demo': [
