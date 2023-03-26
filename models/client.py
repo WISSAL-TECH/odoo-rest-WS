@@ -53,6 +53,14 @@ class ResPartner(models.Model):
                     vals['state_id'] = state_id
                 else:
                     vals['state_id'] = None
+                    
+            # Check if address of client creation 
+            if vals["create_by"] == "wissal-store-address":
+                client = self.env['res.partner'].search([('email', "=", vals["parent_id"])]).id
+                vals["parent_id"] = client
+                if 'combined_keys' in vals.keys():
+                    vals.pop("combined_keys")
+                
             response = super(ResPartner, self).create(vals)
             if response:
                 _logger.info('\n\n\nclient created from controller (wissal-store)\n\n\n\n--->   %s\n\n\n\n', vals)
@@ -149,6 +157,20 @@ class ResPartner(models.Model):
                     else:
                         vals['title'] = None
 
+                # delete address of client
+                if vals["create_by"] == "wissal-store-address":
+                    client_addresses = self.env['res.partner'].search([('email', "=", self.email)]).child_ids
+                    if client_addresses:
+                        for address in client_addresses:
+                            state = address.state_id.name if address.state_id.name else ""
+                            city =  address.city if address.city else ""
+                            street = address.street if address.street else ""
+                            combined_key = state + city + street
+                            if combined_key == vals["combined_keys"]:
+                                address.unlink()
+                        if vals["combined_keys"]:
+                            vals.pop("combined_keys")
+                
                 response = super(ResPartner, self).write(vals)
                 _logger.info('\n\n\nresponse value is :  \n\n\n\n\n--->  %s\n\n\n\n\n\n\n', response)
                 
