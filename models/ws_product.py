@@ -171,10 +171,10 @@ class Product(models.Model):
                         "value_id": attr.value_id.name}
                     characteristic_list.append(characteristic_obj)
 
-                if vals['is_virtual']:
-                    ws_type = "VIRTUAL"
-                else:
-                    ws_type = "PHISICAL"
+                # if vals['is_virtual']:
+                #     ws_type = "VIRTUAL"
+                # else:
+                #     ws_type = "PHISICAL"
 
                 # FILL THE JSON DATA
                 product_json = {
@@ -184,7 +184,6 @@ class Product(models.Model):
                     "categ_id": self.categ_id.name,
                     "description": self.description,
                     "image_url": self.image_url,
-                    "type": ws_type,
                     "list_price": self.list_price,
                     "attribute": characteristic_list,
                 }

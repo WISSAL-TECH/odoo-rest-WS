@@ -24,8 +24,11 @@ class CharacteristicsValue(models.Model):
 
     name = fields.Char("Name")
     characteristic_id = fields.Many2one("product.characteristics",
-                                        relation='characteristic_value_product_characteristics_rel', copy=False)
-    attribute_id = fields.Many2one("characteristic.name", ondelete='cascade', required=True, index=True)
+                                        relation='characteristic_value_product_characteristics_rel', copy=False,
+                                        invisible=1)
+    attribute_id = fields.Many2one("characteristic.name", ondelete='cascade', required=True, index=True,
+                                 )
+
 
 
 
