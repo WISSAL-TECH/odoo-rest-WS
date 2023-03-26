@@ -7,7 +7,7 @@ class Characteristics(models.Model):
     attribute_id = fields.Many2one("characteristic.name", "Name", ondelete='restrict', required=True, index=True)
     value_id = fields.Many2one("characteristic.value", "Value", domain="[('attribute_id', '=', attribute_id)]",
                                relation='characteristic_value_product_characteristics_rel', ondelete='restrict')
-    product_id = fields.Many2one('product.template', ondelete='cascade', required=True, index=True)
+    product_id = fields.Many2one('product.template', ondelete='cascade', index=True)
 
 
 class CharacteristicsName(models.Model):
