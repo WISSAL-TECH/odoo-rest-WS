@@ -60,15 +60,15 @@ class Product(models.Model):
                     attributes.append(attribute_items)
                 vals['characteristic_ids'] = attributes
 
-            master_product = request.env['product.master'].search([('ref', '=', vals['manufacturer_ref'])])
+            master_product = request.env['product.master'].search([('ref', '=', vals['product_ref'])])
             if master_product:
                 vals['master_product'] = master_product.id
             else:
                 new_master_product = request.env['product.master'].create(
-                    {'ref': vals['manufacturer_ref'], 'name': vals['name']})
+                    {'ref': vals['product_ref'], 'name': vals['name']})
                 vals['master_product'] = new_master_product.id
 
-            [vals.pop(e) for e in ['attribute', 'product_name']]
+            [vals.pop(e) for e in ['attribute', 'product_ref']]
 
             rec = super(Product, self).create(vals)
             return rec
