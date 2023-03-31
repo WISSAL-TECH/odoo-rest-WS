@@ -32,6 +32,7 @@ class Product(models.Model):
     installLink = fields.Char("Install link")
     characteristic_ids = fields.One2many('product.characteristics', 'product_id', "Characteristics", copy=True)
     master_product = fields.Many2one("product.master", string="Parent product", store=True)
+    created_from_master_product = fields.Boolean(default=False)
 
     # set the url and headers
     # headers = {"Content-Type": "application/json", "Accept": "application/json", "Catch-Control": "no-cache"}
@@ -76,7 +77,7 @@ class Product(models.Model):
         # 2- CREATE A PRODUCT FROM ODOO (Send a product to WS)
         else:
             category = self.env['product.category'].search([("id", '=', vals['categ_id'])]).name
-            brand = self.env['product.brand'].search([("id", '=', vals['brand'])]).name
+            # brand = self.env['product.brand'].search([("id", '=', vals['brand'])]).name
             product_name = request.env['product.master'].search([('id', '=', vals['master_product'])]).name
             manufacturer_ref = request.env['product.master'].search([('id', '=', vals['master_product'])]).ref
 
@@ -91,7 +92,7 @@ class Product(models.Model):
             product_json = {
                 "config_name": vals["name"],
                 "name": product_name,
-                "productBrand": brand,
+                # "productBrand": brand,
                 "categoryLabel": category,
                 "reference": vals["manufacturer_ref"],
                 "description": vals["description"],
@@ -105,7 +106,10 @@ class Product(models.Model):
                 "availabilityDate": vals["availabilityDate"],
                 "productCharacteristics": [],
             }
-            print('this is odoo creation', product_json)
+            if rec.created_from_master_product == False:
+                print("not sending to ws")
+            else:
+                print('this is odoo creation', product_json)
 
             return rec
 
@@ -187,8 +191,10 @@ class Product(models.Model):
                     "list_price": self.list_price,
                     "attribute": characteristic_list,
                 }
-
-                print("THIS IS AN ODOO UPDATE ", product_json)
+                if self.created_from_master_product:
+                    print("not sending update to ws")
+                else:
+                    print("THIS IS AN ODOO UPDATE ", product_json)
                 return rec
 
     def create_brand(self, brand):
@@ -233,8 +239,60 @@ class MasterProduct(models.Model):
     _name = 'product.master'
 
     name = fields.Char("Name")
-    product_list = fields.One2many('product.template', 'master_product', 'Products list', domain="[('master_product', '=', id)]")
+    brand = fields.Many2one("product.brand", 'Brand')
+    product_list = fields.One2many('product.template', 'master_product', 'Products list',
+                                   domain="[('master_product', '=', id)]")
     ref = fields.Char(string="Manufacturer reference")
+    categ_id = fields.Many2one('product.category', 'Product Category', change_default=True,
+                               group_expand='_read_group_categ_id',
+                               help="Select category for the current product")
+
+    @api.model
+    def create(self, vals):
+        # SEND MULTIPLE PRODUCTS AT ONCE FROM ODOO
+
+        configurations_list = []
+        configurations_obj = {}
+        for item in vals["product_list"]:
+            # GET CHARACTERISTICS LIST FOR EVERY PRODUCT
+            characteristic_list = []
+            for attr in item[2]["characteristic_ids"]:
+                attribute_name = self.env['characteristic.name'].search([("id", "=", attr[2]['attribute_id'])]).name
+                value_name = self.env['characteristic.value'].search([("id", "=", attr[2]['value_id'])]).name
+                characteristic_obj = {
+                    "attribute_id": attribute_name,
+                    "value_id": value_name}
+                characteristic_list.append(characteristic_obj)
+
+            # FILL NEEDED DATA FOR EACH PRODUCT
+            configurations_obj["name"] = item[2]["name"]
+            configurations_obj["description"] = item[2]["description"]
+            configurations_obj["images"] = item[2]["image_url"]
+            configurations_obj["price"] = item[2]["list_price"]
+            configurations_obj["installLink"] = item[2]["installLink"]
+            configurations_obj["target"] = item[2]["target"]
+            configurations_obj["isUsed"] = item[2]["isUsed"]
+            configurations_obj["availabilityDate"] = item[2]["availabilityDate"]
+            configurations_obj["productCharacteristics"] = characteristic_list
+            configurations_list.append(configurations_obj)
+
+        category = self.env['product.category'].search([("id", '=', vals['categ_id'])]).name
+        brand = self.env['product.brand'].search([("id", '=', vals['brand'])]).name
+
+        # FILL THE FINAL JSON OBJECT TO SEND TO WS
+        products_list = {
+            "product_name": vals["name"],
+            "productBrand": brand,
+            "categoryLabel": category,
+            "reference": vals["ref"],
+            "configurations": configurations_list,
+        }
+        print(products_list)
+        rec = super(MasterProduct, self).create(vals)
+        for product in rec.product_list:
+            product.created_from_master_product = True
+
+        return rec
 
 
 class ProductBrand(models.Model):
