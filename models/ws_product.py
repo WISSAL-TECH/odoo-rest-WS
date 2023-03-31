@@ -77,7 +77,7 @@ class Product(models.Model):
         # 2- CREATE A PRODUCT FROM ODOO (Send a product to WS)
         else:
             category = self.env['product.category'].search([("id", '=', vals['categ_id'])]).name
-            # brand = self.env['product.brand'].search([("id", '=', vals['brand'])]).name
+            brand = self.env['product.brand'].search([("id", '=', vals['brand'])]).name
             product_name = request.env['product.master'].search([('id', '=', vals['master_product'])]).name
             manufacturer_ref = request.env['product.master'].search([('id', '=', vals['master_product'])]).ref
 
@@ -92,7 +92,7 @@ class Product(models.Model):
             product_json = {
                 "config_name": vals["name"],
                 "name": product_name,
-                # "productBrand": brand,
+                "productBrand": brand,
                 "categoryLabel": category,
                 "reference": vals["manufacturer_ref"],
                 "description": vals["description"],
