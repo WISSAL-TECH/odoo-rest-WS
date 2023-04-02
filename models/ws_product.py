@@ -16,7 +16,6 @@ class Product(models.Model):
     is_virtual = fields.Boolean("is Virtual", default=False)
     create_by = fields.Char(string="Créé à partir de",
                             default="Odoo", readonly=True)
-    # characteristic_ids = fields.One2many('product.characteristics', 'product_id')
     manufacturer_ref = fields.Char(string="Code constructeur")
     supplier_ids = fields.One2many('product.supplierinfo', 'product_id', string="Suppliers")
     detailed_type = fields.Selection(default="product")
@@ -39,14 +38,25 @@ class Product(models.Model):
     # url = ""
 
     @api.model
-    def create(self, vals):
-        if "create_by" in vals:
-            # 1- CREATE A PRODUCT FROM WS (Receive a product from WS)
-            if 'create_by' in vals:
-                # GET BRAND, COMPANY, ATTRIBUTES AND CATEGORY ID FROM THE NAMES GIVEN IN VALS
-                vals['brand'] = self.create_brand(vals['brand']).id
-                vals['categ_id'] = self.create_category(vals['categ_id']).id
-                vals['company_id'] = request.env['res.company'].search([('name', '=', vals['company_id'])]).id
+    def create(self, data):
+        if "create_by" in data:
+            vals_list = {}
+            for vals in data["product"]:
+                # 1- CREATE PRODUCTs FROM WS (Receive a product from WS)
+                brand = self.create_brand(vals['brand']).id
+                category = self.create_category(vals['categ_id']).id
+                vals_list['company_id'] = request.env['res.company'].search([('name', '=', vals['company_id'])]).id
+                vals_list['name'] = vals['name']
+                vals_list['target'] = vals['target']
+                vals_list['isUsed'] = vals['isUsed']
+                vals_list['detailed_type'] = vals['detailed_type']
+                vals_list['image_url'] = vals['image_url']
+                vals_list['is_virtual'] = vals['is_virtual']
+                vals_list['list_price'] = vals['list_price']
+                vals_list['manufacturer_ref'] = vals['manufacturer_ref']
+                vals_list['purchase_ok'] = vals['purchase_ok']
+                vals_list['sale_ok'] = vals['sale_ok']
+                vals_list['company_id'] = vals['company_id']
 
                 attributes = []
                 for attr in vals['attribute']:
@@ -59,58 +69,59 @@ class Product(models.Model):
                     })
                     print(attribute_items)
                     attributes.append(attribute_items)
-                vals['characteristic_ids'] = attributes
+                vals_list['characteristic_ids'] = attributes
 
-            master_product = request.env['product.master'].search([('ref', '=', vals['product_ref'])])
-            if master_product:
-                vals['master_product'] = master_product.id
-            else:
-                new_master_product = request.env['product.master'].create(
-                    {'ref': vals['product_ref'], 'name': vals['name']})
-                vals['master_product'] = new_master_product.id
+                master_product = request.env['product.master'].search([('ref', '=', vals['product_ref'])])
+                if master_product:
+                    vals_list['master_product'] = master_product.id
+                else:
+                    new_master_product = request.env['product.master'].create(
+                        {'ref': vals['product_ref'],
+                         'name': vals['name'],
+                         'brand': brand,
+                         'categ_id': category})
+                    vals_list['master_product'] = new_master_product.id
 
-            [vals.pop(e) for e in ['attribute', 'product_ref']]
+                [vals.pop(e) for e in ['attribute', 'product_ref']]
 
-            rec = super(Product, self).create(vals)
+                rec = super(Product, self).create(vals_list)
             return rec
 
         # 2- CREATE A PRODUCT FROM ODOO (Send a product to WS)
         else:
-            category = self.env['product.category'].search([("id", '=', vals['categ_id'])]).name
-            brand = self.env['product.brand'].search([("id", '=', vals['brand'])]).name
-            product_name = request.env['product.master'].search([('id', '=', vals['master_product'])]).name
-            manufacturer_ref = request.env['product.master'].search([('id', '=', vals['master_product'])]).ref
+            category = self.env['product.category'].search([("id", '=', data['categ_id'])]).name
+            product_name = request.env['product.master'].search([('id', '=', data['master_product'])]).name
+            manufacturer_ref = request.env['product.master'].search([('id', '=', data['master_product'])]).ref
 
-            if vals['is_virtual']:
+            if data['is_virtual']:
                 ws_type = "VIRTUAL"
             else:
                 ws_type = "PHISICAL"
 
-            rec = super(Product, self).create(vals)
+            rec = super(Product, self).create(data)
 
             # FILL THE JSON DATA
             product_json = {
-                "config_name": vals["name"],
+                "config_name": data["name"],
                 "name": product_name,
-                "productBrand": brand,
                 "categoryLabel": category,
-                "reference": vals["manufacturer_ref"],
-                "description": vals["description"],
-                "images": vals["image_url"],
+                "reference": data["manufacturer_ref"],
+                "description": data["description"],
+                "images": data["image_url"],
                 "type": ws_type,
-                "price": vals["list_price"],
+                "price": data["list_price"],
                 "refConstructor": manufacturer_ref,
-                "installLink": vals["installLink"],
-                "target": vals["target"],
-                "isUsed": vals["isUsed"],
-                "availabilityDate": vals["availabilityDate"],
+                "installLink": data["installLink"],
+                "target": data["target"],
+                "isUsed": data["isUsed"],
+                "availabilityDate": data["availabilityDate"],
                 "productCharacteristics": [],
             }
-            if rec.created_from_master_product == False:
+
+            if rec.created_from_master_product:
                 print("not sending to ws")
             else:
                 print('this is odoo creation', product_json)
-
             return rec
 
     # UPDATE A PRODUCT
@@ -254,6 +265,7 @@ class MasterProduct(models.Model):
         configurations_list = []
         configurations_obj = {}
         for item in vals["product_list"]:
+            item[2]['created_from_master_product'] = True
             # GET CHARACTERISTICS LIST FOR EVERY PRODUCT
             characteristic_list = []
             for attr in item[2]["characteristic_ids"]:
@@ -266,6 +278,20 @@ class MasterProduct(models.Model):
 
             # FILL NEEDED DATA FOR EACH PRODUCT
             configurations_obj["name"] = item[2]["name"]
+            configurations_obj["refConstructor"] = item[2]["manufacturer_ref"]
+            configurations_obj["discount"] = False
+            configurations_obj["state"] = False
+            configurations_obj["script"] = False
+            configurations_obj["active"] = False
+            configurations_obj["updater"] = False
+            configurations_obj["productName"] = False
+            configurations_obj["display"] = False
+            configurations_obj["productBrand"] = False
+            configurations_obj["categoryLabel"] = False
+            configurations_obj["type"] = False
+            configurations_obj["stock"] = False
+            configurations_obj["buyingPriceDollar"] = False
+            configurations_obj["buyingPriceEuro"] = False
             configurations_obj["description"] = item[2]["description"]
             configurations_obj["images"] = item[2]["image_url"]
             configurations_obj["price"] = item[2]["list_price"]
@@ -281,17 +307,26 @@ class MasterProduct(models.Model):
 
         # FILL THE FINAL JSON OBJECT TO SEND TO WS
         products_list = {
+            "description": False,
+            "categoryId": category,
+            "brand": {
+                "name": brand,
+                "reference": False},
+            "codEAN": False,
+            "comments": False,
+            "activate": False,
+            "codFAB": False,
+            "updater": False,
+            "target": False,
             "product_name": vals["name"],
-            "productBrand": brand,
-            "categoryLabel": category,
             "reference": vals["ref"],
             "configurations": configurations_list,
         }
+
         print(products_list)
         rec = super(MasterProduct, self).create(vals)
-        for product in rec.product_list:
-            product.created_from_master_product = True
-
+        # for product in rec.product_list:
+        #     product.created_from_master_product = True
         return rec
 
 
