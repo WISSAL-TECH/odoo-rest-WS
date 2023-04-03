@@ -30,7 +30,7 @@ class Product(models.Model):
                    ("OCCASION_9", "OCCASION9/10")], string="Etat", default="NEUF_SOUS_EMBALLAGE")
     installLink = fields.Char("Install link")
     characteristic_ids = fields.One2many('product.characteristics', 'product_id', "Characteristics", copy=True)
-    master_product = fields.Many2one("product.master", string="Parent product", store=True)
+    master_product = fields.Many2one("product.master", string="Parent product", store=True, ondelete='cascade')
     created_from_master_product = fields.Boolean(default=False)
 
     # set the url and headers
