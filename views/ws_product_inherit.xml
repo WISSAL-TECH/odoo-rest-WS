@@ -67,8 +67,8 @@
         <field name="inherit_id" ref="product.product_template_search_view"/>
         <field name="arch" type="xml">
             <xpath expr="//search" position="inside">
-                <filter name="group_master_product" string="Parent product" icon="terp-partner"
-                        context="{'group_by':'master_product'}"/>
+                <filter name="group_master_product" string="Parent product"/>
+<!--                        context="{'group_by':'master_product'}"/>-->
             </xpath>
         </field>
     </record>
