@@ -40,11 +40,12 @@ class Product(models.Model):
     @api.model
     def create(self, data):
         if "create_by" in data:
+            brand = self.create_brand(data['brand']).id
+            category = self.create_category(data['categ_id']).id
             vals_list = {}
             for vals in data["product"]:
                 # 1- CREATE PRODUCTs FROM WS (Receive a product from WS)
-                brand = self.create_brand(vals['brand']).id
-                category = self.create_category(vals['categ_id']).id
+
                 vals_list['company_id'] = request.env['res.company'].search([('name', '=', vals['company_id'])]).id
                 vals_list['name'] = vals['name']
                 vals_list['target'] = vals['target']
@@ -71,18 +72,17 @@ class Product(models.Model):
                     attributes.append(attribute_items)
                 vals_list['characteristic_ids'] = attributes
 
-                master_product = request.env['product.master'].search([('ref', '=', vals['product_ref'])])
+                master_product = request.env['product.master'].search([('ref', '=', data['product_ref'])])
                 if master_product:
                     vals_list['master_product'] = master_product.id
                 else:
                     new_master_product = request.env['product.master'].create(
-                        {'ref': vals['product_ref'],
-                         'name': vals['name'],
+                        {'ref': data['product_ref'],
+                         'name': data['name'],
                          'brand': brand,
-                         'categ_id': category})
+                         'categ_id': category,
+                         'create_by': "ws"})
                     vals_list['master_product'] = new_master_product.id
-
-                [vals.pop(e) for e in ['attribute', 'product_ref']]
 
                 rec = super(Product, self).create(vals_list)
             return rec
@@ -254,6 +254,7 @@ class MasterProduct(models.Model):
     product_list = fields.One2many('product.template', 'master_product', 'Products list',
                                    domain="[('master_product', '=', id)]")
     ref = fields.Char(string="Manufacturer reference")
+    create_by = fields.Char("Created by")
     categ_id = fields.Many2one('product.category', 'Product Category', change_default=True,
                                group_expand='_read_group_categ_id',
                                help="Select category for the current product")
@@ -261,73 +262,67 @@ class MasterProduct(models.Model):
     @api.model
     def create(self, vals):
         # SEND MULTIPLE PRODUCTS AT ONCE FROM ODOO
+        if "create_by" not in vals:
+            configurations_list = []
+            configurations_obj = {}
+            for item in vals["product_list"]:
+                item[2]['created_from_master_product'] = True
+                # GET CHARACTERISTICS LIST FOR EVERY PRODUCT
+                characteristic_list = []
+                for attr in item[2]["characteristic_ids"]:
+                    attribute_name = self.env['characteristic.name'].search([("id", "=", attr[2]['attribute_id'])]).name
+                    value_name = self.env['characteristic.value'].search([("id", "=", attr[2]['value_id'])]).name
+                    characteristic_obj = {
+                        "name": attribute_name,
+                        "value": value_name}
+                    characteristic_list.append(characteristic_obj)
 
-        configurations_list = []
-        configurations_obj = {}
-        for item in vals["product_list"]:
-            item[2]['created_from_master_product'] = True
-            # GET CHARACTERISTICS LIST FOR EVERY PRODUCT
-            characteristic_list = []
-            for attr in item[2]["characteristic_ids"]:
-                attribute_name = self.env['characteristic.name'].search([("id", "=", attr[2]['attribute_id'])]).name
-                value_name = self.env['characteristic.value'].search([("id", "=", attr[2]['value_id'])]).name
-                characteristic_obj = {
-                    "attribute_id": attribute_name,
-                    "value_id": value_name}
-                characteristic_list.append(characteristic_obj)
+                # FILL NEEDED DATA FOR EACH PRODUCT
+                configurations_obj["name"] = item[2]["name"]
+                configurations_obj["reference"] = item[2]["manufacturer_ref"]
+                configurations_obj["discount"] = False
+                configurations_obj["state"] = False
+                configurations_obj["script"] = False
+                configurations_obj["active"] = False
+                configurations_obj["updater"] = False
+                configurations_obj["productName"] = False
+                configurations_obj["display"] = False
+                configurations_obj["type"] = False
+                configurations_obj["description"] = item[2]["description"]
+                configurations_obj["images"] = item[2]["image_url"]
+                configurations_obj["price"] = item[2]["list_price"]
+                configurations_obj["installLink"] = item[2]["installLink"]
+                configurations_obj["target"] = item[2]["target"]
+                configurations_obj["isUsed"] = item[2]["isUsed"]
+                configurations_obj["availabilityDate"] = item[2]["availabilityDate"]
+                configurations_obj["productCharacteristics"] = characteristic_list
+                configurations_list.append(configurations_obj)
 
-            # FILL NEEDED DATA FOR EACH PRODUCT
-            configurations_obj["name"] = item[2]["name"]
-            configurations_obj["refConstructor"] = item[2]["manufacturer_ref"]
-            configurations_obj["discount"] = False
-            configurations_obj["state"] = False
-            configurations_obj["script"] = False
-            configurations_obj["active"] = False
-            configurations_obj["updater"] = False
-            configurations_obj["productName"] = False
-            configurations_obj["display"] = False
-            configurations_obj["productBrand"] = False
-            configurations_obj["categoryLabel"] = False
-            configurations_obj["type"] = False
-            configurations_obj["stock"] = False
-            configurations_obj["buyingPriceDollar"] = False
-            configurations_obj["buyingPriceEuro"] = False
-            configurations_obj["description"] = item[2]["description"]
-            configurations_obj["images"] = item[2]["image_url"]
-            configurations_obj["price"] = item[2]["list_price"]
-            configurations_obj["installLink"] = item[2]["installLink"]
-            configurations_obj["target"] = item[2]["target"]
-            configurations_obj["isUsed"] = item[2]["isUsed"]
-            configurations_obj["availabilityDate"] = item[2]["availabilityDate"]
-            configurations_obj["productCharacteristics"] = characteristic_list
-            configurations_list.append(configurations_obj)
+            category = self.env['product.category'].search([("id", '=', vals['categ_id'])]).name
+            brand = self.env['product.brand'].search([("id", '=', vals['brand'])]).name
 
-        category = self.env['product.category'].search([("id", '=', vals['categ_id'])]).name
-        brand = self.env['product.brand'].search([("id", '=', vals['brand'])]).name
+            # FILL THE FINAL JSON OBJECT TO SEND TO WS
+            products_list = {
+                "description": False,
+                "categoryId": category,
+                "brand": {
+                    "name": brand,
+                    "reference": False},
+                "comments": False,
+                "activate": False,
+                "target": False,
+                "product_name": vals["name"],
+                "refeConstructor": vals["ref"],
+                "configurations": configurations_list,
+            }
 
-        # FILL THE FINAL JSON OBJECT TO SEND TO WS
-        products_list = {
-            "description": False,
-            "categoryId": category,
-            "brand": {
-                "name": brand,
-                "reference": False},
-            "codEAN": False,
-            "comments": False,
-            "activate": False,
-            "codFAB": False,
-            "updater": False,
-            "target": False,
-            "product_name": vals["name"],
-            "reference": vals["ref"],
-            "configurations": configurations_list,
-        }
-
-        print(products_list)
-        rec = super(MasterProduct, self).create(vals)
-        # for product in rec.product_list:
-        #     product.created_from_master_product = True
-        return rec
+            print(products_list)
+            rec = super(MasterProduct, self).create(vals)
+            # for product in rec.product_list:
+            #     product.created_from_master_product = True
+            return rec
+        else:
+            return super(MasterProduct, self).create(vals)
 
 
 class ProductBrand(models.Model):
