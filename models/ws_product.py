@@ -102,15 +102,15 @@ class Product(models.Model):
 
             # FILL THE JSON DATA
             product_json = {
-                "config_name": data["name"],
-                "name": product_name,
-                "categoryLabel": category,
+                "name": data["name"],
                 "reference": data["manufacturer_ref"],
                 "description": data["description"],
                 "images": data["image_url"],
                 "type": ws_type,
+                "active": False,
+                "state": data["state"],
                 "price": data["list_price"],
-                "refConstructor": manufacturer_ref,
+                "refeConstructor": manufacturer_ref,
                 "installLink": data["installLink"],
                 "target": data["target"],
                 "isUsed": data["isUsed"],
@@ -186,21 +186,27 @@ class Product(models.Model):
                         "value_id": attr.value_id.name}
                     characteristic_list.append(characteristic_obj)
 
-                # if vals['is_virtual']:
-                #     ws_type = "VIRTUAL"
-                # else:
-                #     ws_type = "PHISICAL"
+                if vals['is_virtual']:
+                    ws_type = "VIRTUAL"
+                else:
+                    ws_type = "PHISICAL"
 
                 # FILL THE JSON DATA
                 product_json = {
                     "name": self.name,
-                    "product": product_ref,
-                    "brand": self.brand.name,
-                    "categ_id": self.categ_id.name,
+                    "reference": self.manufacturer_ref,
+                    "refeConstructor": product_ref,
                     "description": self.description,
                     "image_url": self.image_url,
-                    "list_price": self.list_price,
-                    "attribute": characteristic_list,
+                    "price": self.list_price,
+                    "productCharacteristics": characteristic_list,
+                    "updater": False,
+                    "availabilityDate": self.availabilityDate,
+                    "display": False,
+                    "type": ws_type,
+                    "state": self.state,
+                    "installLink": self.installLink,
+                    "target": self.target
                 }
                 if self.created_from_master_product:
                     print("not sending update to ws")
@@ -279,6 +285,7 @@ class MasterProduct(models.Model):
 
                 # FILL NEEDED DATA FOR EACH PRODUCT
                 configurations_obj["name"] = item[2]["name"]
+                configurations_obj["refeConstructor"] = vals["ref"]
                 configurations_obj["reference"] = item[2]["manufacturer_ref"]
                 configurations_obj["discount"] = False
                 configurations_obj["state"] = False
