@@ -98,6 +98,14 @@ class Product(models.Model):
             else:
                 ws_type = "PHISICAL"
 
+            # GET characteristics LIST
+            characteristic_list = []
+            for attr in data['characteristic_ids']:
+                characteristic_obj = {
+                    "name": attr.attribute_id.name,
+                    "value": attr.value_id.name}
+                characteristic_list.append(characteristic_obj)
+
             rec = super(Product, self).create(data)
 
             # FILL THE JSON DATA
@@ -115,7 +123,7 @@ class Product(models.Model):
                 "target": data["target"],
                 "isUsed": data["isUsed"],
                 "availabilityDate": data["availabilityDate"],
-                "productCharacteristics": [],
+                "productCharacteristics": characteristic_list,
             }
 
             if rec.created_from_master_product:
@@ -141,20 +149,21 @@ class Product(models.Model):
             print(vals['attribute'])
 
             # UPDATE CHARACTERISTICS LIST
-            attributes = [(5, 0, 0)]
-            for attr in vals['attribute'][0][2]:
-                print(attr)
-                attribute_items = [0, 0]
-                attr_id = self.create_attribute(attr['attribute_id']).id
-                attr_value_id = self.create_attribute_value(attr['value_id'], attr_id).id
+            if 'attribute' in vals:
+                attributes = [(5, 0, 0)]
+                for attr in vals['attribute'][0][2]:
+                    print(attr)
+                    attribute_items = [0, 0]
+                    attr_id = self.create_attribute(attr['attribute_id']).id
+                    attr_value_id = self.create_attribute_value(attr['value_id'], attr_id).id
 
-                attribute_items.append({
-                    'attribute_id': attr_id,
-                    'value_id': attr_value_id
-                })
-                attributes.append(attribute_items)
-            vals['characteristic_ids'] = attributes
-            vals.pop('attribute')
+                    attribute_items.append({
+                        'attribute_id': attr_id,
+                        'value_id': attr_value_id
+                    })
+                    attributes.append(attribute_items)
+                vals['characteristic_ids'] = attributes
+                vals.pop('attribute')
 
             rec = super(Product, self).write(vals)
             print("API UPDATE", vals)
@@ -182,8 +191,8 @@ class Product(models.Model):
                 characteristic_list = []
                 for attr in self.characteristic_ids:
                     characteristic_obj = {
-                        "attribute_id": attr.attribute_id.name,
-                        "value_id": attr.value_id.name}
+                        "name": attr.attribute_id.name,
+                        "value": attr.value_id.name}
                     characteristic_list.append(characteristic_obj)
 
                 if vals['is_virtual']:
