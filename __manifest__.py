@@ -27,11 +27,9 @@
 
     # always loaded
     'data': [
-        # 'data/settings.xml',
-        'security/ir.model.access.csv',
-        'views/ws_product_inherit.xml',
-        'views/ws_license_keys_view.xml',
-        'views/characteristics.xml'
+        # 'security/ir.model.access.csv',
+        # 'views/ws_product_inherit.xml',
+
     ],
     # only loaded in demonstration mode
     'demo': [
