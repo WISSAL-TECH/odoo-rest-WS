@@ -43,20 +43,53 @@ class Product(models.Model):
         # Connect to ws db
         connection = utils._wsconnect()
         # try:
+        query = "SELECT c.name, c.price, c.availability_date, c.description, c.type, c.install_link," \
+                " c.target, c.reference, p.name, p.refe_constructor, " \
+                "p.description, " \
+                "cat.description, b.name, c.is_used FROM configuration c " \
+                "JOIN product p on p.id = c.product_id" \
+                " JOIN category cat on p.category_id = cat.id JOIN brand b on p.brand_id = b.id"
         cursor = connection.cursor()
-        cursor.execute("SELECT c.name, c.price, c.state, c.is_used, c.availability_date,"
-                       " c.description, c.type, c.install_link, c.target, p.name as product_name, "
-                       "p.refe_constructor, p.description as product_description, "
-                       "cat.description as category, b.name as brand  "
-                       "FROM configuration c "
-                       "JOIN product p on p.id = c.product_id "
-                       "JOIN category cat on p.category_id = cat.id"
-                       " JOIN brand b on p.brand_id = b.id ")
+        cursor.execute(query)
+        result = cursor.fetchall()
+        config_obj = {"purchase_ok": True,
+                      "sale_ok": True,
+                      "company_id": False,
+                      "detailed_type": "product",
+                      "default_code": False,
+                      "image_url": False,
+                      "attribute": []
+                      }
+        config_list = []
+        for row in result:
+            config_obj["name"] = row[0]
+            config_obj["list_price"] = row[1]
+            config_obj["availability_date"] = row[2]
+            config_obj["description"] = row[3]
+            config_obj["install_link"] = row[5]
+            config_obj["target"] = row[6]
+            config_obj["isUsed"] = row[13]
+            config_obj["manufacturer_ref"] = row[7]
+            if row[4] == "PHYSICAL":
+                config_obj["is_virtual"] = False
+            else:
+                config_obj["is_virtual"] = True
+            config_list.append(config_obj)
 
-        row = cursor.fetchall()
+            json_obj = {
+                    "create_by": "ws",
+                    "name": row[8],
+                    "brand": row[12],
+                    "categ_id": row[11],
+                    "product_ref": row[9],
+                    "product": config_list
+                }
+
+            print(json_obj)
+            self.create(json_obj)
         cursor.close()
         connection.close()
-        print(row[0])
+
         # except:
         #     raise exceptions.UserError("Problème de connexion à la base de données, veuillez réessayer")
 
