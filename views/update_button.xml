@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="product_template_action" model="ir.actions.server">
+            <field name="name">product.template.server.action</field>
+            <field name="model_id" ref="odoo-rest-WS.model_product_template"/>
+            <field name="state">code</field>
+            <field name="code">action = model.product_synchro_button()</field>
+        </record>
+²
+        <menuitem name="Update products list" id="synchro_button_menu_id"
+                  parent="stock.menu_stock_root"
+                  action="product_template_action" sequence="200"/>
+
+    </data>
+</odoo>

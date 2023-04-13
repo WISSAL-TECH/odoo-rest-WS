@@ -1,6 +1,6 @@
 import json
 import requests
-from odoo import models, fields, api
+from odoo import models, fields, api, exceptions
 from odoo.http import request
 import logging
 from _datetime import datetime
@@ -36,6 +36,62 @@ class Product(models.Model):
     # set the url and headers
     # headers = {"Content-Type": "application/json", "Accept": "application/json", "Catch-Control": "no-cache"}
     # url = ""
+
+    # FETCH ALL PRODUCT FROM WS DB TO UPDATE ODOO PRODUCT LIST
+    def product_synchro_button(self):
+        utils = self.env['odoo_utils']
+        # Connect to ws db
+        connection = utils._wsconnect()
+        # try:
+        query = "SELECT c.name, c.price, c.availability_date, c.description, c.type, c.install_link," \
+                " c.target, c.reference, p.name, p.refe_constructor, " \
+                "p.description, " \
+                "cat.description, b.name, c.is_used FROM configuration c " \
+                "JOIN product p on p.id = c.product_id" \
+                " JOIN category cat on p.category_id = cat.id JOIN brand b on p.brand_id = b.id"
+        cursor = connection.cursor()
+        cursor.execute(query)
+        result = cursor.fetchall()
+        config_obj = {"purchase_ok": True,
+                      "sale_ok": True,
+                      "company_id": False,
+                      "detailed_type": "product",
+                      "default_code": False,
+                      "image_url": False,
+                      "attribute": []
+                      }
+        config_list = []
+        for row in result:
+            config_obj["name"] = row[0]
+            config_obj["list_price"] = row[1]
+            config_obj["availability_date"] = row[2]
+            config_obj["description"] = row[3]
+            config_obj["install_link"] = row[5]
+            config_obj["target"] = row[6]
+            config_obj["isUsed"] = row[13]
+            config_obj["manufacturer_ref"] = row[7]
+            if row[4] == "PHYSICAL":
+                config_obj["is_virtual"] = False
+            else:
+                config_obj["is_virtual"] = True
+            config_list.append(config_obj)
+
+            json_obj = {
+                    "create_by": "ws",
+                    "name": row[8],
+                    "brand": row[12],
+                    "categ_id": row[11],
+                    "product_ref": row[9],
+                    "product": config_list
+                }
+
+            print(json_obj)
+            self.create(json_obj)
+        cursor.close()
+        connection.close()
+
+        # except:
+        #     raise exceptions.UserError("Problème de connexion à la base de données, veuillez réessayer")
 
     @api.model
     def create(self, data):
@@ -260,7 +316,6 @@ class Product(models.Model):
             value_id = self.env['characteristic.value'].create({'name': value, "attribute_id": attr_id})
         return value_id
 
-
 class MasterProduct(models.Model):
     _name = 'product.master'
 
@@ -285,7 +340,8 @@ class MasterProduct(models.Model):
                 # GET CHARACTERISTICS LIST FOR EVERY PRODUCT
                 characteristic_list = []
                 for attr in item[2]["characteristic_ids"]:
-                    attribute_name = self.env['characteristic.name'].search([("id", "=", attr[2]['attribute_id'])]).name
+                    attribute_name = self.env['characteristic.name'].search(
+                        [("id", "=", attr[2]['attribute_id'])]).name
                     value_name = self.env['characteristic.value'].search([("id", "=", attr[2]['value_id'])]).name
                     characteristic_obj = {
                         "name": attribute_name,
@@ -340,7 +396,6 @@ class MasterProduct(models.Model):
         else:
             return super(MasterProduct, self).create(vals)
 
-
 class ProductBrand(models.Model):
     _name = 'product.brand'
     _description = 'product brand'
@@ -353,3 +408,4 @@ class ProductBrand(models.Model):
         for field in self:
             res.append((field.id, field.name))
         return res
+
