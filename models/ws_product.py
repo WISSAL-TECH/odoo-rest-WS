@@ -1,6 +1,6 @@
 import json
 import requests
-from odoo import models, fields, api
+from odoo import models, fields, api, exceptions
 from odoo.http import request
 import logging
 from _datetime import datetime
@@ -36,6 +36,29 @@ class Product(models.Model):
     # set the url and headers
     # headers = {"Content-Type": "application/json", "Accept": "application/json", "Catch-Control": "no-cache"}
     # url = ""
+
+    # FETCH ALL PRODUCT FROM WS DB TO UPDATE ODOO PRODUCT LIST
+    def product_synchro_button(self):
+        utils = self.env['odoo_utils']
+        # Connect to ws db
+        connection = utils._wsconnect()
+        # try:
+        cursor = connection.cursor()
+        cursor.execute("SELECT c.name, c.price, c.state, c.is_used, c.availability_date,"
+                       " c.description, c.type, c.install_link, c.target, p.name as product_name, "
+                       "p.refe_constructor, p.description as product_description, "
+                       "cat.description as category, b.name as brand  "
+                       "FROM configuration c "
+                       "JOIN product p on p.id = c.product_id "
+                       "JOIN category cat on p.category_id = cat.id"
+                       " JOIN brand b on p.brand_id = b.id ")
+
+        row = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        print(row[0])
+        # except:
+        #     raise exceptions.UserError("Problème de connexion à la base de données, veuillez réessayer")
 
     @api.model
     def create(self, data):

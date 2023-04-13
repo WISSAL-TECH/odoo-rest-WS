@@ -1,4 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_odoo_utils,odoo_utilsd,model_odoo_utils,base.group_user,1,1,1,1
 access_product_brand,product.brand,model_product_brand,base.group_user,1,1,1,1
 access_product_virtual_keys,product.virtual.keys,model_product_virtual_keys,base.group_user,1,1,1,1
 access_product_master,product.master,model_product_master,base.group_user,1,1,1,1
