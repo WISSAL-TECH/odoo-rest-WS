@@ -154,24 +154,32 @@ class Product(models.Model):
             else:
                 ws_type = "PHISICAL"
 
+            # GET characteristics LIST
+            characteristic_list = []
+            for attr in data['characteristic_ids']:
+                characteristic_obj = {
+                    "name": attr.attribute_id.name,
+                    "value": attr.value_id.name}
+                characteristic_list.append(characteristic_obj)
+
             rec = super(Product, self).create(data)
 
             # FILL THE JSON DATA
             product_json = {
-                "config_name": data["name"],
-                "name": product_name,
-                "categoryLabel": category,
+                "name": data["name"],
                 "reference": data["manufacturer_ref"],
                 "description": data["description"],
                 "images": data["image_url"],
                 "type": ws_type,
+                "active": False,
+                "state": data["state"],
                 "price": data["list_price"],
-                "refConstructor": manufacturer_ref,
+                "refeConstructor": manufacturer_ref,
                 "installLink": data["installLink"],
                 "target": data["target"],
                 "isUsed": data["isUsed"],
                 "availabilityDate": data["availabilityDate"],
-                "productCharacteristics": [],
+                "productCharacteristics": characteristic_list,
             }
 
             if rec.created_from_master_product:
@@ -197,20 +205,21 @@ class Product(models.Model):
             print(vals['attribute'])
 
             # UPDATE CHARACTERISTICS LIST
-            attributes = [(5, 0, 0)]
-            for attr in vals['attribute'][0][2]:
-                print(attr)
-                attribute_items = [0, 0]
-                attr_id = self.create_attribute(attr['attribute_id']).id
-                attr_value_id = self.create_attribute_value(attr['value_id'], attr_id).id
+            if 'attribute' in vals:
+                attributes = [(5, 0, 0)]
+                for attr in vals['attribute'][0][2]:
+                    print(attr)
+                    attribute_items = [0, 0]
+                    attr_id = self.create_attribute(attr['attribute_id']).id
+                    attr_value_id = self.create_attribute_value(attr['value_id'], attr_id).id
 
-                attribute_items.append({
-                    'attribute_id': attr_id,
-                    'value_id': attr_value_id
-                })
-                attributes.append(attribute_items)
-            vals['characteristic_ids'] = attributes
-            vals.pop('attribute')
+                    attribute_items.append({
+                        'attribute_id': attr_id,
+                        'value_id': attr_value_id
+                    })
+                    attributes.append(attribute_items)
+                vals['characteristic_ids'] = attributes
+                vals.pop('attribute')
 
             rec = super(Product, self).write(vals)
             print("API UPDATE", vals)
@@ -238,25 +247,31 @@ class Product(models.Model):
                 characteristic_list = []
                 for attr in self.characteristic_ids:
                     characteristic_obj = {
-                        "attribute_id": attr.attribute_id.name,
-                        "value_id": attr.value_id.name}
+                        "name": attr.attribute_id.name,
+                        "value": attr.value_id.name}
                     characteristic_list.append(characteristic_obj)
 
-                # if vals['is_virtual']:
-                #     ws_type = "VIRTUAL"
-                # else:
-                #     ws_type = "PHISICAL"
+                if vals['is_virtual']:
+                    ws_type = "VIRTUAL"
+                else:
+                    ws_type = "PHISICAL"
 
                 # FILL THE JSON DATA
                 product_json = {
                     "name": self.name,
-                    "product": product_ref,
-                    "brand": self.brand.name,
-                    "categ_id": self.categ_id.name,
+                    "reference": self.manufacturer_ref,
+                    "refeConstructor": product_ref,
                     "description": self.description,
                     "image_url": self.image_url,
-                    "list_price": self.list_price,
-                    "attribute": characteristic_list,
+                    "price": self.list_price,
+                    "productCharacteristics": characteristic_list,
+                    "updater": False,
+                    "availabilityDate": self.availabilityDate,
+                    "display": False,
+                    "type": ws_type,
+                    "state": self.state,
+                    "installLink": self.installLink,
+                    "target": self.target
                 }
                 if self.created_from_master_product:
                     print("not sending update to ws")
@@ -301,7 +316,6 @@ class Product(models.Model):
             value_id = self.env['characteristic.value'].create({'name': value, "attribute_id": attr_id})
         return value_id
 
-
 class MasterProduct(models.Model):
     _name = 'product.master'
 
@@ -326,7 +340,8 @@ class MasterProduct(models.Model):
                 # GET CHARACTERISTICS LIST FOR EVERY PRODUCT
                 characteristic_list = []
                 for attr in item[2]["characteristic_ids"]:
-                    attribute_name = self.env['characteristic.name'].search([("id", "=", attr[2]['attribute_id'])]).name
+                    attribute_name = self.env['characteristic.name'].search(
+                        [("id", "=", attr[2]['attribute_id'])]).name
                     value_name = self.env['characteristic.value'].search([("id", "=", attr[2]['value_id'])]).name
                     characteristic_obj = {
                         "name": attribute_name,
@@ -335,6 +350,7 @@ class MasterProduct(models.Model):
 
                 # FILL NEEDED DATA FOR EACH PRODUCT
                 configurations_obj["name"] = item[2]["name"]
+                configurations_obj["refeConstructor"] = vals["ref"]
                 configurations_obj["reference"] = item[2]["manufacturer_ref"]
                 configurations_obj["discount"] = False
                 configurations_obj["state"] = False
@@ -380,7 +396,6 @@ class MasterProduct(models.Model):
         else:
             return super(MasterProduct, self).create(vals)
 
-
 class ProductBrand(models.Model):
     _name = 'product.brand'
     _description = 'product brand'
@@ -393,3 +408,4 @@ class ProductBrand(models.Model):
         for field in self:
             res.append((field.id, field.name))
         return res
+
