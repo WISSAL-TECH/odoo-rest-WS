@@ -86,7 +86,11 @@ class Product(models.Model):
                 }
 
             print(json_obj)
-            self.create(json_obj)
+            searched_config = self.env["product.template"].search([("manufacturer_ref", "=", row[7])])
+            if not searched_config:
+                self.create(json_obj)
+            else:
+                pass
         cursor.close()
         connection.close()
 
