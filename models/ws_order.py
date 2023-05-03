@@ -15,7 +15,15 @@ class WsOrder(models.Model):
                                                ('CASH_EN_DELIVERY', 'Cash')])
     order_state = fields.Selection(string="order states",
                                    selection=[('PAID_DELIVERED', 'Livrée'),
-                                             ])
+                                              ('WAITING_FOR_CLIENT', 'En attente du client'),
+                                              ('NOT_PAID_IN_DELIVERY', 'En cours de livraison'),
+                                              ('NOT_PAID_PREPARED', 'En préparation'),
+                                              ('NOT_PAID', 'En attente'),
+                                              ('CLIENT_NOT_RESPONDING', 'Client ne répond pas'),
+                                              ('CONFIRMED', 'Confirmée'),
+                                              ('NOT_PAID_NOT_DELIVERY', 'En attende de paiement'),
+                                              ('PAID_NOT_DELIVERED', 'Payée'),
+                                              ('PAID_FAILED_NOT_DELIVERED', 'Paiement échoué')])
     state = fields.Selection([
         ('draft', 'Quotation'),
         ('validate', 'Validated'),
