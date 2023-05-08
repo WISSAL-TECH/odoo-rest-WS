@@ -7,7 +7,7 @@
             <field name="state">code</field>
             <field name="code">action = model.product_synchro_button()</field>
         </record>
-²
+
         <menuitem name="Update products list" id="synchro_button_menu_id"
                   parent="stock.menu_stock_root"
                   action="product_template_action" sequence="200"/>
