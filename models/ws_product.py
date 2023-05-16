@@ -412,4 +412,3 @@ class ProductBrand(models.Model):
         for field in self:
             res.append((field.id, field.name))
         return res
-
