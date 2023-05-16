@@ -15,7 +15,6 @@ class CharacteristicsName(models.Model):
 
     name = fields.Char("Name")
     value_ids = fields.One2many('characteristic.value', 'attribute_id', copy=True)
-    # characteristic_ids = fields.One2many('product.characteristics', 'attribute_id', "Lines")
     product_id = fields.Many2one('product.template', store=True)
 
 
@@ -26,8 +25,7 @@ class CharacteristicsValue(models.Model):
     characteristic_id = fields.Many2one("product.characteristics",
                                         relation='characteristic_value_product_characteristics_rel', copy=False,
                                         invisible=1)
-    attribute_id = fields.Many2one("characteristic.name", ondelete='cascade', required=True, index=True,
-                                 )
+    attribute_id = fields.Many2one("characteristic.name", ondelete='cascade', required=True, index=True)
 
 
 

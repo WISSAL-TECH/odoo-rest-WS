@@ -1,10 +1,6 @@
-import json
-import requests
+
 import logging
-import psycopg2
 from odoo import models, fields, api
-from odoo.http import request
-from datetime import datetime
 _logger = logging.getLogger(__name__)
 
 
