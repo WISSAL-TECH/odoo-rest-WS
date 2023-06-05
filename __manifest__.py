@@ -27,7 +27,6 @@
 
     # always loaded
     'data': [
-        'views/res_partner_inherit.xml'
         # 'data/settings.xml',
         'security/ir.model.access.csv',
         'views/ws_product_inherit.xml',
