@@ -23,10 +23,11 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['product','stock', 'sale', 'purchase'],
+    'depends': ['base_setup', 'base', 'product','stock', 'sale', 'purchase'],
 
     # always loaded
     'data': [
+        'views/res_partner_inherit.xml'
         # 'data/settings.xml',
         'security/ir.model.access.csv',
         'views/ws_product_inherit.xml',
