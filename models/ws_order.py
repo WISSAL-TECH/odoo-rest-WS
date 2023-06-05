@@ -15,13 +15,14 @@ class WsOrder(models.Model):
                                                ('CASH_EN_DELIVERY', 'Cash')])
     order_state = fields.Selection(string="order states",
                                    selection=[('PAID_DELIVERED', 'Livrée'),
+                                              ('CREATED', 'Créée'),
                                               ('WAITING_FOR_CLIENT', 'En attente du client'),
                                               ('NOT_PAID_IN_DELIVERY', 'En cours de livraison'),
                                               ('NOT_PAID_PREPARED', 'En préparation'),
                                               ('NOT_PAID', 'En attente'),
                                               ('CLIENT_NOT_RESPONDING', 'Client ne répond pas'),
                                               ('CONFIRMED', 'Confirmée'),
-                                              ('NOT_PAID_NOT_DELIVERY', 'En attende de paiement'),
+                                              ('NOT_PAID_NOT_DELIVERY', 'En attente du paiement'),
                                               ('PAID_NOT_DELIVERED', 'Payée'),
                                               ('PAID_FAILED_NOT_DELIVERED', 'Paiement échoué')])
     state = fields.Selection([
@@ -81,14 +82,14 @@ class WsOrder(models.Model):
                 invoice_address = self.env["res.partner"].search(
                     ['&', ('street', 'ilike', vals['invoice_address']['street']), ('type', '=', 'invoice')])
 
-                if address_parent_id.street in vals['invoice_address']['street']:
-                    vals['partner_invoice_id'] = address_parent_id
+                if invoice_address:
+                    vals['partner_invoice_id'] = invoice_address.id
                     _logger.info('\n\n\n INVOICE ADDRESS FOUND \n\n\n\n %s \n\n\n\n', vals['partner_invoice_id'])
                 else:
                     vals['partner_invoice_id'] = self.env["res.partner"].create({'type': 'invoice',
                                                                                  'create_by': "ws",
                                                                                  'is_company': False,
-                                                                                 'id': address_parent_id,
+                                                                                 'id': vals['partner_id'],
                                                                                  'name':
                                                                                      vals['invoice_address'][
                                                                                          'name'],
@@ -120,7 +121,29 @@ class WsOrder(models.Model):
                             "price_unit": line['price_unit']}
                 order_line_list.append([0, 0, line_obj])
             vals["order_line"] = order_line_list
+
             rec = super(WsOrder, self).create(vals)
             if rec:
-                _logger.info('\n\n\n ORDER / QUOTATION CREATED FROM TEKKEYS \n\n\n\n %s \n\n\n\n', vals)
+                _logger.info('\n\n\n ORDER / QUOTATION CREATED FROM WS  \n\n\n\n %s \n\n\n\n', vals)
                 return rec
+        else:
+            return super(WsOrder, self).create(vals)
+
+    def write(self, vals):
+        # Update made by WS  -------------------------------------------------------------------------
+        if 'create_by' in vals:
+            if 'order_state' in vals:
+                self.order_state = vals['order_state']
+            return super(WsOrder, self).write(vals)
+        else:
+            # update from odoo
+            if self.state == "sale":
+                vals['order_state'] = "NOT_PAID"
+
+            return super(WsOrder, self).write(vals)
+
+
+
+
+
+
