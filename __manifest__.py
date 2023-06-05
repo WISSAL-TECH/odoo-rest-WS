@@ -33,6 +33,7 @@
         'views/characteristics.xml',
         'views/ws_order_inherit.xml',
         'views/update_button.xml'
+        # 'views/res_partner_inherit.xml'
     ],
     # only loaded in demonstration mode
     'demo': [
