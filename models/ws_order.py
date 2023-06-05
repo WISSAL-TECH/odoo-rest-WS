@@ -118,7 +118,10 @@ class WsOrder(models.Model):
                 # FILL ORDER LINE FOR THIS ORDER
                 line_obj = {"product_id": product_id.id,
                             "product_uom_qty": line["product_uom_qty"],
-                            "price_unit": line['price_unit']}
+                            "price_unit": line['price_unit'],
+                            "name": "",
+                            "product_uom": 1
+                            }
                 order_line_list.append([0, 0, line_obj])
             vals["order_line"] = order_line_list
 
