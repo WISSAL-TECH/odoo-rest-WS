@@ -34,6 +34,7 @@ class WsOrder(models.Model):
         ('cancel', 'Cancelled')], string='Status', readonly=True, copy=False, index=True, tracking=3, default='draft')
     create_by = fields.Char('Created by', default='Odoo')
     headers = {"Content-Type": "application/json", "Accept": "application/json", "Catch-Control": "no-cache"}
+    virtual_order = fields.Boolean(default=False)
     # url_quotation = "https://api.tekkeys.com/api/v1/odoo/orders/quotation"
     # url_order = "https://api.tekkeys.com/api/v1/odoo/orders/order"
 
@@ -52,6 +53,10 @@ class WsOrder(models.Model):
     def action_confirm(self):
         for rec in self:
             rec.write({'order_state': "CONFIRMED"})
+        first_product = self.order_line[0].product_id
+        print(first_product)
+        if first_product.is_virtual:
+            self.write({'virtual_order': True})
         return super(WsOrder, self).action_confirm()
 
     @api.model
@@ -110,7 +115,6 @@ class WsOrder(models.Model):
                                                                                  'name':
                                                                                      vals['invoice_address'][
                                                                                          'name'],
-
                                                                                  'phone':
                                                                                      vals['delivery_address'][
                                                                                          'phone'],
@@ -157,7 +161,6 @@ class WsOrder(models.Model):
             return super(WsOrder, self).write(vals)
         else:
             # update from odoo
-
             return super(WsOrder, self).write(vals)
 
 

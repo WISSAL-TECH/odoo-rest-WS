@@ -5,42 +5,26 @@
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
+
+
+
+
+
             <button name="action_quotation_send" position="after">
+                <field name="virtual_order" invisible="1"/>
                 <button name="button_prepare" string="En preparation" type="object"
-                        attrs="{'invisible': [('order_state', 'not in', ['CONFIRMED'])]}"/>
+                        attrs="{'invisible': ['|', ('order_state', 'not in', ['CONFIRMED']), ('virtual_order', '=', True)]}"/>
 
                 <button name="button_in_delivery" string="En livraison" type="object"
                         attrs="{'invisible': [('order_state', 'not in', ['NOT_PAID_PREPARED'])]}"/>
 
                 <button name="button_delivered" string="Livrée" type="object"
                         attrs="{'invisible': [('order_state', 'not in', ['NOT_PAID_IN_DELIVERY', 'NOT_PAID_PREPARED'])]}"/>
-
             </button>
-            <!--            <header>-->
-            <!--                <button name="action_quotation_send" string="Send by Email" type="object"-->
-            <!--                        attrs="{'invisible': [('state', 'not in', ['validate'])]}"-->
-            <!--                        class="btn-primary" data-hotkey="g"/>-->
 
-            <!--                <button name="action_confirm" data-hotkey="v" string="Confirm" type="object"-->
-            <!--                        attrs="{'invisible': [('state', 'in', ['draft','sale','sent'])]}"/>-->
-
-
-            <!--                <xpath expr="/form/header/field[@name='state']" position="replace">-->
-            <!--                    <field name="state" widget="statusbar" statusbar_visible="draft,validate,sent,sale"/>-->
-            <!--                </xpath>-->
-            <!--            </header>-->
-            <!--            <field name="user_id" position="after">-->
-            <!--                <field name="last_updater"/>-->
-            <!--            </field>-->
-            <!--            <button name="action_quotation_send" position="after">-->
-            <!--                <button name="validate_button" string="Validate" type="object"-->
-            <!--                        attrs="{'invisible': [('state', 'not in', ['draft'])]}"/>-->
-            <!--            </button>-->
             <div name="button_box" position="after">
-                <!--                <field name="accepted" invisible="1"/>-->
                 <field name="order_state" invisible="1"/>
-                <!--                <widget name="web_ribbon" title="Accepted"-->
-                <!--                        attrs="{'invisible': [('accepted', '=', False)]}"/>-->
+
                 <widget name="web_ribbon" title="Livrée"
                         attrs="{'invisible': [('order_state', '!=', 'PAID_DELIVERED')]}"/>
 
