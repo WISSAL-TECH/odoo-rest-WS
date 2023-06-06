@@ -255,7 +255,7 @@ class Product(models.Model):
                         "value": attr.value_id.name}
                     characteristic_list.append(characteristic_obj)
 
-                if vals['is_virtual']:
+                if 'is_virtual' in vals:
                     ws_type = "VIRTUAL"
                 else:
                     ws_type = "PHISICAL"

@@ -83,7 +83,7 @@ class WsOrder(models.Model):
                     vals['partner_shipping_id'] = self.env["res.partner"].create({'type': 'delivery',
                                                                                   'create_by': "ws",
                                                                                   'is_company': False,
-                                                                                  'id': vals['partner_id'],
+                                                                                  'parent_id': vals['partner_id'],
                                                                                   'name': vals['delivery_address'][
                                                                                       'name'],
 
@@ -112,7 +112,7 @@ class WsOrder(models.Model):
                     vals['partner_invoice_id'] = self.env["res.partner"].create({'type': 'invoice',
                                                                                  'create_by': "ws",
                                                                                  'is_company': False,
-                                                                                 'id': vals['partner_id'],
+                                                                                 'parent_id': vals['partner_id'],
                                                                                  'name':
                                                                                      vals['invoice_address'][
                                                                                          'name'],
