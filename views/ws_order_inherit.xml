@@ -7,9 +7,6 @@
         <field name="arch" type="xml">
 
 
-
-
-
             <button name="action_quotation_send" position="after">
                 <field name="virtual_order" invisible="1"/>
                 <button name="button_prepare" string="En preparation" type="object"
