@@ -53,10 +53,10 @@ class WsOrder(models.Model):
     def action_confirm(self):
         for rec in self:
             rec.write({'order_state': "CONFIRMED"})
-        first_product = self.order_line[0].product_id
-        print(first_product)
-        if first_product.is_virtual:
-            self.write({'virtual_order': True})
+            first_product = rec.order_line[0].product_id
+            print(first_product)
+            if first_product.is_virtual:
+                rec.write({'virtual_order': True})
         return super(WsOrder, self).action_confirm()
 
     @api.model
