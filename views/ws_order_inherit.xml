@@ -19,7 +19,7 @@
                         attrs="{'invisible': [('order_state', 'not in', ['NOT_PAID_PREPARED'])]}"/>
 
                 <button name="button_delivered" string="Livrée" type="object"
-                        attrs="{'invisible': [('order_state', 'not in', ['NOT_PAID_IN_DELIVERY', 'NOT_PAID_PREPARED'])]}"/>
+                        attrs="{'invisible': ['&amp;', ('order_state', 'not in', ['NOT_PAID_IN_DELIVERY', 'NOT_PAID_PREPARED']), ('virtual_order', '=', False)]}"/>
             </button>
 
             <div name="button_box" position="after">
