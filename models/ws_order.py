@@ -37,6 +37,23 @@ class WsOrder(models.Model):
     # url_quotation = "https://api.tekkeys.com/api/v1/odoo/orders/quotation"
     # url_order = "https://api.tekkeys.com/api/v1/odoo/orders/order"
 
+    def button_prepare(self):
+        for rec in self:
+            rec.write({'order_state': "NOT_PAID_PREPARED"})
+
+    def button_in_delivery(self):
+        for rec in self:
+            rec.write({'order_state': "NOT_PAID_IN_DELIVERY"})
+
+    def button_delivered(self):
+        for rec in self:
+            rec.write({'order_state': "PAID_DELIVERED"})
+
+    def action_confirm(self):
+        for rec in self:
+            rec.write({'order_state': "CONFIRMED"})
+        return super(WsOrder, self).action_confirm()
+
     @api.model
     def create(self, vals):
         # RECEIVE ORDER/QUOTATION FROM WS
@@ -140,8 +157,6 @@ class WsOrder(models.Model):
             return super(WsOrder, self).write(vals)
         else:
             # update from odoo
-            if self.state == "sale":
-                vals['order_state'] = "NOT_PAID"
 
             return super(WsOrder, self).write(vals)
 
