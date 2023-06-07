@@ -53,17 +53,19 @@ class WsOrder(models.Model):
     def action_confirm(self):
         for rec in self:
             rec.write({'order_state': "CONFIRMED"})
+            print(self.order_state)
             # check weather the order is virtual or physical
-            first_product = rec.order_line[0].product_id
-            if first_product.is_virtual:
-                rec.write({'virtual_order': True})
+            if rec.order_line:
+                first_product = rec.order_line[0].product_id
+                if first_product.is_virtual:
+                    rec.write({'virtual_order': True})
 
         return super(WsOrder, self).action_confirm()
 
     @api.model
     def create(self, vals):
         
-        # SET THE ENVIREMENT
+        # SET THE ENVIRONMENT
         utils = self.env['odoo_utils']
         
         # RECEIVE ORDER/QUOTATION FROM WS
@@ -203,9 +205,6 @@ class WsOrder(models.Model):
             return super(WsOrder, self).write(vals)
         else:
             # update from odoo
-            if self.state == "sale":
-                vals['order_state'] = "NOT_PAID"
-
             return super(WsOrder, self).write(vals)
 
 
