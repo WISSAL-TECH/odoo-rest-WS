@@ -1,19 +1,22 @@
 from odoo import models
 import psycopg2
+import logging
 
+_logger = logging.getLogger(__name__)
 
 class Utils(models.Model):
     _name = 'odoo_utils'
     _description = 'Common useful functions (This class is used to avoid duplicated code)'
 
     # FUNCTION TO QUERY THE FIELDs FROM A MODEL
-    def affect_many_to_one(self, request_key, object, field_in_db, field_to_get='id'):
+    def affect_many_to_one(self, request_key, object, field_in_db, field_to_get = 'id'):
         field = self.env[object].search([(field_in_db, '=', request_key)])[field_to_get]
         if field:
             return field
         else:
             return False
-
+        
+        
     # Function to connect to WS DB and get sequences
     def _wsconnect(self):
         ###################### dev
@@ -25,7 +28,7 @@ class Utils(models.Model):
                                 dbname="dbwsdev",
                                 password="4qu0gAMA6hNI856sbgFN",
                                 sslmode='require')
-
+        
     def order_affect_address(self, client_env):
 
         partner = self.env['res.partner'].search([('id', '=', client_env)])
@@ -38,10 +41,20 @@ class Utils(models.Model):
             for child in partner.child_ids:
                 if child.type == 'delivery':
                     delivery_address = {}
-                    delivery_address['name'] = name
+                    state = child.state_id.name if child.state_id.name else ""
+                    city =  child.city if child.city else ""
+                    street = child.street if child.street else ""
+                    combined_key = state + city + street
+                    
+                    delivery_address['lastname'] = partner.lastname
+                    delivery_address['name'] = partner.name
+                    delivery_address['phone'] = partner.phone
+                    delivery_address['type'] = child.type
+                    delivery_address['combined_keys'] = combined_key
+                    delivery_address['parent_id'] = email
                     delivery_address['street'] = child.street
                     delivery_address['street2'] = child.street2
-                    delivery_address['zip'] = child.zip
+                    delivery_address['zip'] = child.zip       
                     state = self.affect_many_to_one(child.state_id.id, 'res.country.state', 'id', 'name')
                     delivery_address['city'] = state
                     country_code = self.affect_many_to_one(child.country_id.id, 'res.country', 'id', 'code')
@@ -94,9 +107,9 @@ class Utils(models.Model):
             delivery_address = invoice_address
             parent_siret = None
         return {
-            'invoice_address': invoice_address,
-            'delivery_address': delivery_address,
-            'parent_siret': parent_siret,
-            'email': email,
-            'name': name
-        }
+                'invoice_address':invoice_address, 
+                'delivery_address':delivery_address, 
+                'parent_siret':parent_siret, 
+                'email':email,
+                'name':name
+                }
