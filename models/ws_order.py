@@ -34,11 +34,15 @@ class WsOrder(models.Model):
         ('cancel', 'Cancelled')], string='Status', readonly=True, copy=False, index=True, tracking=3, default='draft')
     create_by = fields.Char('Created by', default='Odoo')
     headers = {"Content-Type": "application/json", "Accept": "application/json", "Catch-Control": "no-cache"}
-    # url_quotation = "https://api.tekkeys.com/api/v1/odoo/orders/quotation"
-    # url_order = "https://api.tekkeys.com/api/v1/odoo/orders/order"
+    # url_quotation = "https://"
+    # url_order = "https://"
 
     @api.model
     def create(self, vals):
+        
+        # SET THE ENVIREMENT
+        utils = self.env['odoo_utils']
+        
         # RECEIVE ORDER/QUOTATION FROM WS
         if 'create_by' in vals:
 
@@ -130,7 +134,48 @@ class WsOrder(models.Model):
                 _logger.info('\n\n\n ORDER / QUOTATION CREATED FROM WS  \n\n\n\n %s \n\n\n\n', vals)
                 return rec
         else:
-            return super(WsOrder, self).create(vals)
+            
+            # Create the quotation in odoo
+            res = super(WsOrder, self).create(vals)
+            
+            # Play with shipping and invoice addresses
+            if 'partner_id' in vals:
+                partner_data = utils.order_affect_address(vals['partner_id'])
+
+            # Fill quotationLines fields
+            if 'order_line' in vals.keys():
+                product_lines = []
+                for order_line in vals['order_line']:
+                    template = {}
+                    line_product = self.env['product.product'].search([('id', '=', order_line[2]["product_id"])])
+                    template['product_id'] = line_product.manufacturer_ref
+                    template['product_uom_qty'] = order_line[2]["product_uom_qty"]
+                    template['price_unit'] = order_line[2]["price_unit"]
+                    product_lines.append(template)
+
+            # Collect the data to be sent to takkeys for create quotation
+            json_data = {
+                "name": res.name,
+                "ordertype": "CLIENT", # [ GUEST, CLIENT, ADMIN, GEUST_TO_CLIENT ]
+                "livreurId": 1, # toujours =  1
+                "recoveryMode": "HOME", # [HOME, AGENCY]
+                "deliveryType": "DOMICILE", # [DOMICILE, POINT_DE_RELAIT, NO_DELIVERY]
+                "partner_id": partner_data['email'] if partner_data['email'] else '',
+                "order_state": "CREATED", # [CREATED, PAID, NOT_PAID, CONFIRMED, CANCELED, PAID_PREPARED, NOT_PAID_PREPARED, NOT_PAID_READY, PAID_READY, NOT_PAID_IN_DELIVERY, PAID_IN_DELIVERY, PAID_DELIVERED, NOT_PAID_RETURNED, WAITING_FOR_CLIENT, CLIENT_NOT_RESPONDING, NOT_PAID_NOT_DELIVERY, PAID_NOT_DELIVERED, PAID_FAILED, PAID_FAILED_NOT_DELIVERED]
+                "delivery_address": partner_data['delivery_address'] if partner_data['delivery_address'] else '',
+                "payment_mode": "CASH_EN_DELIVERY",
+                "order_line": product_lines,
+                "Date": vals['date_order'] if 'date_order' in vals.keys() else '',
+                "parentName": partner_data['parent_siret'] if partner_data['parent_siret'] else False,
+                "invoiceAdresse": partner_data['invoice_address'] if partner_data['invoice_address'] else '',
+                
+            }
+            if res:
+                _logger.info('\n\n\nData sent to Wissal\n\n\n\n--->>  %s\n\n\n\n\n\n\n', json_data)
+                # response = requests.post(self.url_quotation, data=json.dumps(json_data), headers=self.headers)
+                # _logger.info('\n\n\n(Quotation insertion) response from Wissal\n\n\n\n--->>  %s\n\n\n\n',
+                #              response.content)
+            return res
 
     def write(self, vals):
         # Update made by WS  -------------------------------------------------------------------------
