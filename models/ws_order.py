@@ -25,13 +25,13 @@ class WsOrder(models.Model):
                                               ('NOT_PAID_NOT_DELIVERY', 'En attente du paiement'),
                                               ('PAID_NOT_DELIVERED', 'Payée'),
                                               ('PAID_FAILED_NOT_DELIVERED', 'Paiement échoué')])
-    state = fields.Selection([
-        ('draft', 'Quotation'),
-        ('validate', 'Validated'),
-        ('sent', 'Quotation Sent'),
-        ('sale', 'Sales Order'),
-        ('done', 'Locked'),
-        ('cancel', 'Cancelled')], string='Status', readonly=True, copy=False, index=True, tracking=3, default='draft')
+    # state = fields.Selection([
+    #     ('draft', 'Quotation'),
+    #     ('validate', 'Validated'),
+    #     ('sent', 'Quotation Sent'),
+    #     ('sale', 'Sales Order'),
+    #     ('done', 'Locked'),
+    #     ('cancel', 'Cancelled')], string='Status', readonly=True, copy=False, index=True, tracking=3, default='draft')
     create_by = fields.Char('Created by', default='Odoo')
     headers = {"Content-Type": "application/json", "Accept": "application/json", "Catch-Control": "no-cache"}
     virtual_order = fields.Boolean(default=False)
@@ -98,9 +98,6 @@ class WsOrder(models.Model):
                     _logger.info('\n\n\n NEW SHIPPING ADDRESS FOUND \n\n\n\n %s \n\n\n\n', vals['partner_shipping_id'])
 
             if 'invoice_address' in vals:
-                address_parent_id = self.env["res.partner"].search(
-                    [('id', '=', vals['partner_id'])]).parent_id
-
                 # SEARCH FOR EXISTING INVOICE ADDRESS & CREATE A NEW ONE IF NOT
                 invoice_address = self.env["res.partner"].search(
                     ['&', ('street', 'ilike', vals['invoice_address']['street']), ('type', '=', 'invoice')])

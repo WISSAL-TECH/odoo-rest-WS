@@ -6,7 +6,6 @@
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
 
-
             <button name="action_quotation_send" position="after">
                 <field name="virtual_order" invisible="1"/>
                 <button name="button_prepare" string="En preparation" type="object"
@@ -18,7 +17,6 @@
                 <button name="button_delivered" string="Livrée" type="object"
                         attrs="{'invisible': ['&amp;', ('order_state', 'not in', ['NOT_PAID_IN_DELIVERY', 'NOT_PAID_PREPARED']), ('virtual_order', '=', False)]}"/>
             </button>
-
             <div name="button_box" position="after">
                 <field name="order_state" invisible="1"/>
 
