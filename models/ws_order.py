@@ -38,6 +38,28 @@ class WsOrder(models.Model):
     # url_quotation = "https://"
     # url_order = "https://"
 
+    def button_prepare(self):
+        for rec in self:
+            rec.write({'order_state': "NOT_PAID_PREPARED"})
+
+    def button_in_delivery(self):
+        for rec in self:
+            rec.write({'order_state': "NOT_PAID_IN_DELIVERY"})
+
+    def button_delivered(self):
+        for rec in self:
+            rec.write({'order_state': "PAID_DELIVERED"})
+
+    def action_confirm(self):
+        for rec in self:
+            rec.write({'order_state': "CONFIRMED"})
+            # check weather the order is virtual or physical
+            first_product = rec.order_line[0].product_id
+            if first_product.is_virtual:
+                rec.write({'virtual_order': True})
+
+        return super(WsOrder, self).action_confirm()
+
     @api.model
     def create(self, vals):
         
