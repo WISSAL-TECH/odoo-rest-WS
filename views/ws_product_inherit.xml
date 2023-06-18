@@ -204,7 +204,6 @@
                     <group>
                         <field name="product_list"/>
                     </group>
-
                 </sheet>
             </form>
         </field>

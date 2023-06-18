@@ -26,8 +26,8 @@ class Utils(models.Model):
                                 options='',
                                 port="6432",
                                 dbname="dbwsdev",
-                                password="4qu0gAMA6hNI856sbgFN",
-                                sslmode='require')
+                                password="4qu0gAMA6hNI856sbgFN",)
+                                # sslmode='require')
         
     def order_affect_address(self, client_env):
 

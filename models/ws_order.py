@@ -8,7 +8,7 @@ from datetime import datetime
 _logger = logging.getLogger(__name__)
 
 
-class WsOrder(models.Model):
+class EkOrder(models.Model):
     _inherit = 'sale.order'
     payment_mode = fields.Selection(string="Payment mode",
                                     selection=[('VIREMENT', 'Virement'), ('CIB_ELDAHABIA', 'Carte de credit'),
@@ -60,7 +60,7 @@ class WsOrder(models.Model):
                 if first_product.is_virtual:
                     rec.write({'virtual_order': True})
 
-        return super(WsOrder, self).action_confirm()
+        return super(EkOrder, self).action_confirm()
 
     @api.model
     def create(self, vals):
@@ -151,14 +151,14 @@ class WsOrder(models.Model):
                 order_line_list.append([0, 0, line_obj])
             vals["order_line"] = order_line_list
 
-            rec = super(WsOrder, self).create(vals)
+            rec = super(EkOrder, self).create(vals)
             if rec:
                 _logger.info('\n\n\n ORDER / QUOTATION CREATED FROM WS  \n\n\n\n %s \n\n\n\n', vals)
                 return rec
         else:
             
             # Create the quotation in odoo
-            res = super(WsOrder, self).create(vals)
+            res = super(EkOrder, self).create(vals)
             
             # Play with shipping and invoice addresses
             if 'partner_id' in vals:
@@ -202,10 +202,10 @@ class WsOrder(models.Model):
         if 'create_by' in vals:
             if 'order_state' in vals:
                 self.order_state = vals['order_state']
-            return super(WsOrder, self).write(vals)
+            return super(EkOrder, self).write(vals)
         else:
             # update from odoo
-            return super(WsOrder, self).write(vals)
+            return super(EkOrder, self).write(vals)
 
 
 
